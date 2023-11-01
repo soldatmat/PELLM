@@ -6,7 +6,7 @@ import pandas
 AMINO_ACIDS = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
 
 MISSING_FITNESS = 0 # default fitness for missing variants
-START_OPTIONS = ['wt', 'all']
+START_OPTIONS = ['wt', 'all'] # 'wt' - start from the wild type variant, 'all' - run single-mutation walk from each variant
 
 # Specific to data
 MUTATION_POSITIONS = [0, 1, 2, 3] # [39, 40, 41, 54] in the sequence (indexed from 1)
@@ -30,6 +30,8 @@ def single_mutation_walk(start_variant, mutation_positions, fitness_dict):
         for p in range(len(unresolved_positions)):
             pos = unresolved_positions[p]
             for aa in AMINO_ACIDS:
+                if aa == variant[pos]:
+                    continue
                 mutated_variant = variant[:pos] + aa + variant[pos+1:]
                 fitness = fitness_dict.get(mutated_variant, MISSING_FITNESS)
                 if fitness > fitness_progression[-1]:
@@ -47,7 +49,8 @@ def single_mutation_walk(start_variant, mutation_positions, fitness_dict):
 
     return variant, fitness_progression
 
-def main(start='wt'):
+
+def main(start=START_OPTIONS[0]):
     variants, variant_fitness = LOAD_DATA()
 
     if start == START_OPTIONS[0]:
