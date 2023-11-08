@@ -6,12 +6,6 @@ import random
 
 AMINO_ACIDS = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
 
-MIN_FITNESS = 0
-MISSING_FITNESS = 0 # default fitness for missing variants
-N_SAMPLES = 81
-N_PARENTS = 3
-N_ITER = 7
-
 # Specific to data
 MUTATION_POSITIONS = [0, 1, 2, 3] # [39, 40, 41, 54] in the sequence (indexed from 1)
 WILD_TYPE_VARIANT = 'VDGV'
@@ -20,6 +14,13 @@ def LOAD_DATA():
     variants = [v for v in dfs.Variants]
     variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
     return variants, variant_fitness
+
+MIN_FITNESS = 0
+MISSING_FITNESS = 0 # default fitness for missing variants
+N_PARENTS = 3
+MAX_N_TESTED = 190
+N_SAMPLES = MAX_N_TESTED - (N_PARENTS**len(MUTATION_POSITIONS) - N_PARENTS)
+N_ITER = 1
 
 
 
@@ -64,13 +65,22 @@ def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_
     return best_variant, fitness_progression[1:]
 
 
-def main():
+def main(n_runs=1):
     variants, variant_fitness = LOAD_DATA()
     combinatorial_lib = list(variant_fitness) # gets keys of dict as list
-    recombinatorial_lib = random.sample(combinatorial_lib, N_SAMPLES)
-    best_variant, fitness_progression = recombine_mutation(recombinatorial_lib, MUTATION_POSITIONS, variant_fitness)
+
+    best_variants = []
+    fitness_progressions = []
+    for r in range(n_runs):
+        recombinatorial_lib = random.sample(combinatorial_lib, N_SAMPLES)
+        best_variant, fitness_progression = recombine_mutation(recombinatorial_lib, MUTATION_POSITIONS, variant_fitness)
+        best_variants.append(best_variant)
+        fitness_progressions.append(fitness_progression)
     
-    return best_variant, fitness_progression  
+    if n_runs == 1:
+        return best_variant, fitness_progression
+    else:
+        return best_variants, fitness_progressions
 
 
 
