@@ -8,7 +8,7 @@ def train(
     test_data,
     test_labels,
     loss_function,
-    batch_size=1, # TODO implement batches
+    batch_size=1,
     learning_rate=1e-3,
     n_epochs=1,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
@@ -23,11 +23,16 @@ def train(
     evaluation_step(model, device, test_data, test_labels, loss_function)
 
     for epoch in range(n_epochs):
-        training_step(model, device, train_data, train_labels, optimizer, loss_function)
-        evaluation_step(model, device, test_data, test_labels, loss_function)
+        data_from = epoch*batch_size
+        data_to = (epoch+1)*batch_size
+        epoch_train_data = train_data[data_from:data_to]
+        epoch_train_labels = train_labels[data_from:data_to]
+
+        training_step(model, epoch_train_data, epoch_train_labels, optimizer, loss_function)
+        evaluation_step(model, device, test_data, test_labels, loss_function, epoch)
 
 
-def training_step(model, device, train_data, train_labels, optimizer, loss_function):
+def training_step(model, train_data, train_labels, optimizer, loss_function):
     model.train()
     for d in range(len(train_data)):
         input = train_data[d]
@@ -41,7 +46,7 @@ def training_step(model, device, train_data, train_labels, optimizer, loss_funct
         optimizer.step()
 
 
-def evaluation_step(model, device, test_data, test_labels, loss_function):
+def evaluation_step(model, device, test_data, test_labels, loss_function, epoch=None):
     model.eval()
     with torch.no_grad():
         outputs = torch.zeros(len(test_data)).to(device)
@@ -54,4 +59,8 @@ def evaluation_step(model, device, test_data, test_labels, loss_function):
             losses[d] = loss_function(outputs[d], label)
 
         # TODO evaluate
-        print(f"Training: mean test loss = {torch.mean(losses)}")
+        if not epoch:
+            epoch_str = ""
+        else:
+            epoch_str = f"Epoch {epoch}:"
+        print(epoch_str + f"mean test-data loss = {torch.mean(losses)}")
