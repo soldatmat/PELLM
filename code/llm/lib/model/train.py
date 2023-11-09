@@ -59,8 +59,8 @@ def evaluation_step(model, device, test_data, test_labels, loss_function, epoch=
             losses[d] = loss_function(outputs[d], label)
 
         # TODO evaluate
-        if not epoch:
+        if epoch is None:
             epoch_str = ""
         else:
-            epoch_str = f"Epoch {epoch}:"
+            epoch_str = f"Epoch {epoch+1}:"
         print(epoch_str + f"mean test-data loss = {torch.mean(losses)}")
