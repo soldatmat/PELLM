@@ -6,8 +6,6 @@ from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 import torch
 
-from lib.data.data import create_dataset
-
 GB1_PATH = "../../../../../data/GB1/elife-16965-supp1.xlsx"
 
 WT_SEQUENCE = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"
