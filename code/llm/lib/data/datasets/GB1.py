@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
+import torch
 
 from lib.data.data import create_dataset
 
@@ -13,16 +14,23 @@ WT_SEQUENCE = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"
 MUTATION_POSITIONS = [38, 39, 40, 53]  # [39, 40, 41, 54] - 1 for indexing
 
 
-def get_GB1_dataset(tokenize=None, raw=False, test_split: float = None):
+def get_GB1_dataset(tokenize=None, raw=False, test_split: float = None, device=None):
     dfs = load_data()
     sequences, fitnesses = prepare_data(dfs)
     if raw:
         return sequences, fitnesses
 
-    if tokenize:
-        sequences = tokenize(sequences)
+    if tokenize is not None:
+        sequences = tokenize_batch(sequences, tokenize)
+    else:
+        sequences = torch.tensor(sequences)    
+    fitnesses = torch.tensor(fitnesses)
 
-    if test_split:
+    if device is not None:
+        sequences = sequences.to(device)
+        fitnesses = fitnesses.to(device)
+
+    if test_split is not None:
         (
             train_sequences,
             test_sequences,
@@ -65,3 +73,11 @@ def prepare_data(dfs: DataFrame):
         fitnesses.append(fitness)
 
     return sequences, fitnesses
+
+
+def tokenize_batch(sequences, tokenize):
+    tokenized = torch.empty((len(sequences), len(WT_SEQUENCE)), dtype=torch.int64)
+    for s in range(len(sequences)):
+        tokenized[s, :] = torch.tensor(tokenize(sequences[s]))
+
+    return tokenized

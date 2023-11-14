@@ -9,14 +9,14 @@ from lib.model.progen.path import PROGEN_PATH
 MODEL_PATH = PROGEN_PATH + "ProGen/progen/progen2/checkpoints/progen2-small"
 
 
-def init_model(device: torch.device):
+def init_model(device: torch.device = None):
     parent_dir = os.path.dirname(Path(__file__))
     sys.path.append(parent_dir + "/" + PROGEN_PATH)
     from ProGen.progen.progen2.models.progen.modeling_progen import ProGenForCausalLM
 
     path = parent_dir + "/" + MODEL_PATH
 
-    if not device:
+    if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = ProGenForCausalLM.from_pretrained(
