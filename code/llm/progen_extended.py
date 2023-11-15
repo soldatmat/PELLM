@@ -12,7 +12,7 @@ from lib.utils.file import save_pt_file
 # Function defaults
 LEARNING_RATE = 1e-3
 LOSS_FUNCTION = torch.nn.functional.mse_loss
-TEST_SPLIT = 0.1
+TEST_SPLIT = 500 / 149631
 BATCH_SIZE = 1000
 N_EPOCHS = 1
 

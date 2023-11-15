@@ -26,12 +26,9 @@ def train(
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
     loss_history = init_loss_history(n_epochs, train_n_batches)
-    print(
-        evaluation_step(
-            model, device, test_data, test_labels, test_batch_borders, loss_function
-        )
+    loss_history[0, -1] = evaluation_step(
+        model, device, test_data, test_labels, test_batch_borders, loss_function
     )
-    # loss_history[0, -1] = evaluation_step(model, test_data, test_labels, loss_function)
     for epoch in range(n_epochs):
         for batch in range(train_n_batches):
             training_step(
@@ -87,8 +84,8 @@ def evaluation_step(
     test_labels,
     test_batch_borders,
     loss_function,
-    epoch=None,
-    batch=None,
+    epoch_idx=None,
+    batch_idx=None,
 ):
     model.eval()
     with torch.no_grad():
@@ -99,7 +96,7 @@ def evaluation_step(
             )[:, -1, 0]
 
         loss = loss_function(outputs, test_labels)
-        evaluation_print(loss, epoch, batch)
+        evaluation_print(loss, epoch_idx, batch_idx)
         return loss
 
 
