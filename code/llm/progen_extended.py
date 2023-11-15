@@ -9,15 +9,16 @@ from lib.utils.file import save_pt_file
 
 
 
+# Function defaults
 LEARNING_RATE = 1e-3
-LOSS_FUNCTION = torch.nn.functional.mse_loss # torch.nn.functional.l1_loss
+LOSS_FUNCTION = torch.nn.functional.mse_loss
 TEST_SPLIT = 0.1
-BATCH_SIZE = 11
+BATCH_SIZE = 1000
 N_EPOCHS = 1
 
-LOAD_MODEL = "/models/progen_extended_0.pt"
-
-SAVE_NAME = "tmp"
+# Script settings
+LOAD_MODEL = ""
+SAVE_NAME = "v1"
 SAVE_MODEL = "/models/progen_extended_" + SAVE_NAME + ".pt"
 SAVE_HISTORY = "/models/progen_extended_" + SAVE_NAME + "_history.pt"
 
