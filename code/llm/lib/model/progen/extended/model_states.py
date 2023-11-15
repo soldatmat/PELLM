@@ -1,6 +1,6 @@
-import os
-
 import torch
+
+from lib.utils.path import prepare_path
 
 
 def load_model_states(model, state_dict_path: str, absolute_path=False):
@@ -13,10 +13,3 @@ def save_model_states(model, save_to: str, absolute_path=False):
     file_path = prepare_path(save_to, absolute_path)
     print(f'saving model state dict to file "{file_path}"')
     torch.save(model.state_dict(), file_path)
-
-
-def prepare_path(path: str, absolute_path: bool):
-    if absolute_path:
-        return path
-    else:
-        return os.getcwd() + path
