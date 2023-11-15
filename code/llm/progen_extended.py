@@ -8,9 +8,11 @@ from lib.data.datasets.GB1 import get_GB1_dataset
 from lib.utils.file import save_pt_file
 
 
+
+LEARNING_RATE = 1e-3
+LOSS_FUNCTION = torch.nn.functional.mse_loss # torch.nn.functional.l1_loss
 TEST_SPLIT = 0.1
 BATCH_SIZE = 11
-LEARNING_RATE = 1e-3
 N_EPOCHS = 1
 
 LOAD_MODEL = "/models/progen_extended_0.pt"
@@ -21,10 +23,12 @@ SAVE_HISTORY = "/models/progen_extended_" + SAVE_NAME + "_history.pt"
 
 
 def train_progen_extended(
+    learning_rate=LEARNING_RATE,
+    loss_function=LOSS_FUNCTION,
     test_split=TEST_SPLIT,
     batch_size=BATCH_SIZE,
     n_epochs=N_EPOCHS,
-    learning_rate=LEARNING_RATE,
+
     state_dict_path: str = None,
     save_state_dict: str = None,
     save_history: str = None,
@@ -46,22 +50,23 @@ def train_progen_extended(
 
     print("Initializing model")
     model = init_model(
-        device=device,
         state_dict_path=state_dict_path,
         absolute_path=absolute_paths,
-    )
+    ).to(device)
 
     print("Training")
     loss_history = train(
         model=model,
         device=device,
+
         train_data=train_sequences,
         train_labels=train_fitnesses,
         test_data=test_sequences,
         test_labels=test_fitnesses,
-        loss_function=torch.nn.functional.l1_loss,
-        batch_size=batch_size,
+
+        loss_function=loss_function,
         learning_rate=learning_rate,
+        batch_size=batch_size,
         n_epochs=n_epochs,
     )
 

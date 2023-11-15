@@ -2,6 +2,10 @@ from math import ceil
 
 import torch
 
+LEARNING_RATE = 1e-3
+BATCH_SIZE = 1
+N_EPOCHS = 1
+
 
 def train(
     model: torch.nn.Module,
@@ -10,9 +14,9 @@ def train(
     test_data,
     test_labels,
     loss_function,
-    batch_size=1,
-    learning_rate=1e-3,
-    n_epochs=1,
+    batch_size=BATCH_SIZE,
+    learning_rate=LEARNING_RATE,
+    n_epochs=N_EPOCHS,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
     n_batches = ceil(len(train_data) / batch_size)
@@ -50,7 +54,7 @@ def training_step(model, train_data, train_labels, optimizer, loss_function):
     model.train()
 
     optimizer.zero_grad()
-    output = model(train_data).logits[:, -1, 0]
+    output = model(train_data)[:, -1, 0]
 
     loss = loss_function(output, train_labels)
     loss.backward()
@@ -62,16 +66,8 @@ def evaluation_step(
 ):
     model.eval()
     with torch.no_grad():
-        outputs = torch.zeros(len(test_data)).to(device)
-        losses = torch.zeros(len(test_data)).to(device)
-
-        for d in range(len(test_data)):
-            input = test_data[d]
-            label = test_labels[d]
-            outputs[d] = model(input).logits[-1]
-            losses[d] = loss_function(outputs[d], label)
-        loss = torch.mean(losses)
-
+        output = model(test_data)[:, -1, 0]
+        loss = loss_function(output, test_labels)
         evaluation_print(loss, epoch, batch)
         return loss
 

@@ -6,7 +6,7 @@ from tokenizers import Tokenizer
 from lib.model.progen.path import PROGEN_PATH
 
 
-TOKENIZER_FILE = PROGEN_PATH + "ProGen/progen/progen2/tokenizer.json"
+TOKENIZER_FILE = PROGEN_PATH + "progen/progen2/tokenizer.json"
 
 
 def init_tokenizer():

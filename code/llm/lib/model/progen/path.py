@@ -1,1 +1,1 @@
-PROGEN_PATH = "../../../../../"
+PROGEN_PATH = "../../../../../ProGen/"
