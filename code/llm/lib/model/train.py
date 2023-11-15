@@ -19,29 +19,48 @@ def train(
     n_epochs=N_EPOCHS,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
-    n_batches = ceil(len(train_data) / batch_size)
-    batch_borders = [batch * batch_size for batch in range(n_batches)]
-    batch_borders.append(len(train_data))
+    train_batch_borders = get_batch_borders(len(train_data), batch_size)
+    train_n_batches = len(train_batch_borders) - 1
+    test_batch_borders = get_batch_borders(len(test_data), batch_size)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    loss_history = init_loss_history(n_epochs, n_batches)
-    loss_history[0, -1] = evaluation_step(
-        model, device, test_data, test_labels, loss_function
+    loss_history = init_loss_history(n_epochs, train_n_batches)
+    print(
+        evaluation_step(
+            model, device, test_data, test_labels, test_batch_borders, loss_function
+        )
     )
+    # loss_history[0, -1] = evaluation_step(model, test_data, test_labels, loss_function)
     for epoch in range(n_epochs):
-        for batch in range(n_batches):
+        for batch in range(train_n_batches):
             training_step(
                 model,
-                train_data[batch_borders[batch] : batch_borders[batch + 1]],
-                train_labels[batch_borders[batch] : batch_borders[batch + 1]],
+                train_data[train_batch_borders[batch] : train_batch_borders[batch + 1]],
+                train_labels[
+                    train_batch_borders[batch] : train_batch_borders[batch + 1]
+                ],
                 optimizer,
                 loss_function,
             )
             loss_history[epoch + 1, batch] = evaluation_step(
-                model, device, test_data, test_labels, loss_function, epoch, batch
+                model,
+                device,
+                test_data,
+                test_labels,
+                test_batch_borders,
+                loss_function,
+                epoch,
+                batch,
             )
     return loss_history
+
+
+def get_batch_borders(n_data, batch_size):
+    n_batches = ceil(n_data / batch_size)
+    batch_borders = [batch * batch_size for batch in range(n_batches)]
+    batch_borders.append(n_data)
+    return batch_borders
 
 
 def init_loss_history(n_epochs, n_batches):
@@ -62,12 +81,24 @@ def training_step(model, train_data, train_labels, optimizer, loss_function):
 
 
 def evaluation_step(
-    model, device, test_data, test_labels, loss_function, epoch=None, batch=None
+    model,
+    device,
+    test_data,
+    test_labels,
+    test_batch_borders,
+    loss_function,
+    epoch=None,
+    batch=None,
 ):
     model.eval()
     with torch.no_grad():
-        output = model(test_data)[:, -1, 0]
-        loss = loss_function(output, test_labels)
+        outputs = torch.empty(len(test_data)).to(device)
+        for batch in range(len(test_batch_borders) - 1):
+            outputs[test_batch_borders[batch] : test_batch_borders[batch + 1]] = model(
+                test_data[test_batch_borders[batch] : test_batch_borders[batch + 1]]
+            )[:, -1, 0]
+
+        loss = loss_function(outputs, test_labels)
         evaluation_print(loss, epoch, batch)
         return loss
 
