@@ -2,9 +2,11 @@ from math import ceil
 
 import torch
 
+# Defaults
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 1
 N_EPOCHS = 1
+EVALUATION_PERIOD = 1 # evaluate every {EVALUATION_PERIOD} train batches
 
 
 def train(
@@ -17,6 +19,7 @@ def train(
     batch_size=BATCH_SIZE,
     learning_rate=LEARNING_RATE,
     n_epochs=N_EPOCHS,
+    evaluation_period=EVALUATION_PERIOD,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
     train_batch_borders = get_batch_borders(len(train_data), batch_size)
@@ -25,10 +28,11 @@ def train(
 
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    loss_history = init_loss_history(n_epochs, train_n_batches)
+    loss_history = init_loss_history(n_epochs, train_n_batches, evaluation_period)
     loss_history[0, -1] = evaluation_step(
         model, device, test_data, test_labels, test_batch_borders, loss_function
     )
+    evals = 0
     for epoch in range(n_epochs):
         for batch in range(train_n_batches):
             training_step(
@@ -40,16 +44,19 @@ def train(
                 optimizer,
                 loss_function,
             )
-            loss_history[epoch + 1, batch] = evaluation_step(
-                model,
-                device,
-                test_data,
-                test_labels,
-                test_batch_borders,
-                loss_function,
-                epoch,
-                batch,
-            )
+
+            if ((batch+1) % evaluation_period == 0) or (batch+1 == train_n_batches):
+                loss_history[epoch + 1, evals] = evaluation_step(
+                    model,
+                    device,
+                    test_data,
+                    test_labels,
+                    test_batch_borders,
+                    loss_function,
+                    epoch,
+                    batch,
+                )
+                evals += 1
     return loss_history
 
 
@@ -60,8 +67,9 @@ def get_batch_borders(n_data, batch_size):
     return batch_borders
 
 
-def init_loss_history(n_epochs, n_batches):
-    loss_history = torch.empty((n_epochs + 1, n_batches), dtype=torch.float32)
+def init_loss_history(n_epochs, n_batches, evaluation_period):
+    n_evals = ceil(n_batches / evaluation_period)
+    loss_history = torch.empty((n_epochs + 1, n_evals), dtype=torch.float32)
     loss_history[0, :-1] = float("nan")
     return loss_history
 

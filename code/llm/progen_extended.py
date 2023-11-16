@@ -15,12 +15,15 @@ LOSS_FUNCTION = torch.nn.functional.mse_loss
 TEST_SPLIT = 500 / 149631
 BATCH_SIZE = 1000
 N_EPOCHS = 1
+EVALUATION_PERIOD = 1
 
 # Script settings
 LOAD_MODEL = ""
+SAVE_PATH = "/models"
 SAVE_NAME = "v1"
-SAVE_MODEL = "/models/progen_extended_" + SAVE_NAME + ".pt"
-SAVE_HISTORY = "/models/progen_extended_" + SAVE_NAME + "_history.pt"
+
+# Constants
+FILE_PREPEND = "progen_extended"
 
 
 def train_progen_extended(
@@ -29,12 +32,20 @@ def train_progen_extended(
     test_split=TEST_SPLIT,
     batch_size=BATCH_SIZE,
     n_epochs=N_EPOCHS,
+    evaluation_period=EVALUATION_PERIOD,
 
     state_dict_path: str = None,
+    absolute_paths=False,
+
+    save_path: str = None,
+    save_name: str = None,
     save_state_dict: str = None,
     save_history: str = None,
-    absolute_paths=False,
+    save_train_params: str = None,
 ):
+    if save_path and save_name:
+        save_state_dict, save_history, save_train_params = prepare_save_paths(save_path, save_name, save_state_dict, save_history, save_train_params)
+
     print("Connecting to device")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -69,6 +80,7 @@ def train_progen_extended(
         learning_rate=learning_rate,
         batch_size=batch_size,
         n_epochs=n_epochs,
+        evaluation_period=evaluation_period,
     )
 
     if save_state_dict:
@@ -80,13 +92,30 @@ def train_progen_extended(
 
     if save_history:
         save_pt_file(loss_history, save_to=save_history, var_name="loss_history")
+        save_pt_file(
+            {
+                "loss_function":loss_function,
+                "learning_rate":learning_rate,
+                "batch_size":batch_size,
+                "n_epochs":n_epochs,
+                "evaluation_period":evaluation_period,
+            },
+            save_to=save_history,
+            var_name="training settings",)
 
     return loss_history
+
+
+def prepare_save_paths(save_path, save_name, save_state_dict, save_history, save_train_params):
+    save_state_dict = save_path + "/" + FILE_PREPEND + "_" + save_name + ".pt"
+    save_history = save_path + "/" + FILE_PREPEND + "_" + save_name + "_history.pt"
+    save_train_params = save_path + "/" + FILE_PREPEND + "_" + save_name + "_train_params.pt"
+    return save_state_dict, save_history, save_train_params
 
 
 if __name__ == "__main__":
     loss_history = train_progen_extended(
         state_dict_path=LOAD_MODEL,
-        save_state_dict=SAVE_MODEL,
-        save_history=SAVE_HISTORY,
+        save_path=SAVE_PATH,
+        save_name=SAVE_NAME,
     )
