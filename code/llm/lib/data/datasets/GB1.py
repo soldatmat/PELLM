@@ -12,8 +12,19 @@ WT_SEQUENCE = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"
 MUTATION_POSITIONS = [38, 39, 40, 53]  # [39, 40, 41, 54] - 1 for indexing
 
 
-def get_GB1_dataset(tokenize=None, raw=False, test_split: float = None, device=None):
+def get_GB1_dataset(
+    tokenize=None,
+    raw=False,
+    test_split: float = None,
+    shuffle=True,
+    n_data: int = None,
+    device: torch.device = None,
+):
     dfs = load_data()
+    if shuffle:
+        dfs = dfs.sample(frac=1)
+    if n_data:
+        dfs = dfs[:n_data]
     sequences, fitnesses = prepare_data(dfs)
     if raw:
         return sequences, fitnesses
@@ -21,7 +32,7 @@ def get_GB1_dataset(tokenize=None, raw=False, test_split: float = None, device=N
     if tokenize is not None:
         sequences = tokenize_batch(sequences, tokenize)
     else:
-        sequences = torch.tensor(sequences)    
+        sequences = torch.tensor(sequences)
     fitnesses = torch.tensor(fitnesses)
 
     if device is not None:
@@ -34,7 +45,7 @@ def get_GB1_dataset(tokenize=None, raw=False, test_split: float = None, device=N
             test_sequences,
             train_fitnesses,
             test_fitnesses,
-        ) = train_test_split(sequences, fitnesses, test_size=test_split, shuffle=True)
+        ) = train_test_split(sequences, fitnesses, test_size=test_split, shuffle=False)
         return train_sequences, train_fitnesses, test_sequences, test_fitnesses
 
     return sequences, fitnesses
