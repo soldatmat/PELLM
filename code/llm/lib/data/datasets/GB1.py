@@ -17,15 +17,18 @@ def get_GB1_dataset(
     raw=False,
     test_split: float = None,
     shuffle=True,
+    data_indexes=None,
     n_data: int = None,
     device: torch.device = None,
 ):
-    dfs = load_data()
+    df = load_data()
+    if data_indexes:
+        df = df.iloc[data_indexes]
     if shuffle:
-        dfs = dfs.sample(frac=1)
+        df = df.sample(frac=1)
     if n_data:
-        dfs = dfs[:n_data]
-    sequences, fitnesses = prepare_data(dfs)
+        df = df[:n_data]
+    sequences, fitnesses = prepare_data(df)
     if raw:
         return sequences, fitnesses
 

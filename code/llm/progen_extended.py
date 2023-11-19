@@ -8,19 +8,19 @@ from lib.data.datasets.GB1 import get_GB1_dataset
 from lib.utils.file import save_pt_file
 
 
-
 # Function defaults
 LEARNING_RATE = 1e-3
 LOSS_FUNCTION = torch.nn.functional.mse_loss
-TEST_SPLIT = 500 / 149631
-BATCH_SIZE = 1000
+N_DATA = 1100
+TEST_SPLIT = 100 / N_DATA  # all data = 149631
+BATCH_SIZE = 1
 N_EPOCHS = 1
-EVALUATION_PERIOD = 1
+EVALUATION_PERIOD = 1 # in number of batches
 
 # Script settings
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "v1"
+SAVE_NAME = "v1_01"
 
 # Constants
 FILE_PREPEND = "progen_extended"
@@ -29,6 +29,7 @@ FILE_PREPEND = "progen_extended"
 def train_progen_extended(
     learning_rate=LEARNING_RATE,
     loss_function=LOSS_FUNCTION,
+    n_data=N_DATA,
     test_split=TEST_SPLIT,
     batch_size=BATCH_SIZE,
     n_epochs=N_EPOCHS,
@@ -44,7 +45,9 @@ def train_progen_extended(
     save_train_params: str = None,
 ):
     if save_path and save_name:
-        save_state_dict, save_history, save_train_params = prepare_save_paths(save_path, save_name, save_state_dict, save_history, save_train_params)
+        save_state_dict, save_history, save_train_params = prepare_save_paths(
+            save_path, save_name, save_state_dict, save_history, save_train_params
+        )
 
     print("Connecting to device")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -57,6 +60,8 @@ def train_progen_extended(
     train_sequences, train_fitnesses, test_sequences, test_fitnesses = get_GB1_dataset(
         tokenize=tokenize,
         test_split=test_split,
+        shuffle=True,
+        n_data=n_data,
         device=device,
     )
 
@@ -70,12 +75,10 @@ def train_progen_extended(
     loss_history = train(
         model=model,
         device=device,
-
         train_data=train_sequences,
         train_labels=train_fitnesses,
         test_data=test_sequences,
         test_labels=test_fitnesses,
-
         loss_function=loss_function,
         learning_rate=learning_rate,
         batch_size=batch_size,
@@ -94,22 +97,27 @@ def train_progen_extended(
         save_pt_file(loss_history, save_to=save_history, var_name="loss_history")
         save_pt_file(
             {
-                "loss_function":loss_function,
-                "learning_rate":learning_rate,
-                "batch_size":batch_size,
-                "n_epochs":n_epochs,
-                "evaluation_period":evaluation_period,
+                "loss_function": loss_function,
+                "learning_rate": learning_rate,
+                "batch_size": batch_size,
+                "n_epochs": n_epochs,
+                "evaluation_period": evaluation_period,
             },
-            save_to=save_history,
-            var_name="training settings",)
+            save_to=save_train_params,
+            var_name="training parameters",
+        )
 
     return loss_history
 
 
-def prepare_save_paths(save_path, save_name, save_state_dict, save_history, save_train_params):
+def prepare_save_paths(
+    save_path, save_name, save_state_dict, save_history, save_train_params
+):
     save_state_dict = save_path + "/" + FILE_PREPEND + "_" + save_name + ".pt"
     save_history = save_path + "/" + FILE_PREPEND + "_" + save_name + "_history.pt"
-    save_train_params = save_path + "/" + FILE_PREPEND + "_" + save_name + "_train_params.pt"
+    save_train_params = (
+        save_path + "/" + FILE_PREPEND + "_" + save_name + "_train_params.pt"
+    )
     return save_state_dict, save_history, save_train_params
 
 
