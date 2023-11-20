@@ -1,6 +1,6 @@
 import torch
 
-from lib.model.progen.extended.init_model import init_model
+from lib.model.extended.init_model import init_model
 from lib.model.progen.init_tokenizer import init_tokenizer
 from lib.data.datasets.GB1 import get_GB1_dataset
 

@@ -1,6 +1,6 @@
 from lib.model.progen.init_model import init_model as init_progen_model
-from lib.model.progen.extended.model_states import load_model_states
-from lib.model.progen.extended.TransformerExtended import TransformerExtended
+from lib.model.extended.model_states import load_model_states
+from lib.model.extended.TransformerExtended import TransformerExtended
 
 
 def init_model(state_dict_path: str = None, absolute_path=False):
