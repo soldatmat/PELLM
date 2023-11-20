@@ -18,12 +18,15 @@ def get_GB1_dataset(
     test_split: float = None,
     shuffle=True,
     data_indexes=None,
+    exclude_indexes=None,
     n_data: int = None,
     device: torch.device = None,
 ):
     df = load_data()
     if data_indexes:
         df = df.iloc[data_indexes]
+    if exclude_indexes:
+        df = df.drop(exclude_indexes)
     if shuffle:
         df = df.sample(frac=1)
     if n_data:

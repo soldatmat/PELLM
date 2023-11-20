@@ -11,16 +11,18 @@ from lib.utils.file import save_pt_file
 # Function defaults
 LEARNING_RATE = 1e-3
 LOSS_FUNCTION = torch.nn.functional.mse_loss
-N_DATA = 1100
-TEST_SPLIT = 100 / N_DATA  # all data = 149631
-BATCH_SIZE = 1
+BATCH_SIZE = 1000
 N_EPOCHS = 1
-EVALUATION_PERIOD = 1 # in number of batches
+EVALUATION_PERIOD = 1  # in number of batches
 
 # Script settings
+N_DATA = None # all data = 149631
+TEST_SPLIT = None
+TEST_DATA_INDEXES = [0, 1, 18, 74, 519, 623, 949, 32322, 50456, 49771]
+
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "v1_01"
+SAVE_NAME = "data_select_02"
 
 # Constants
 FILE_PREPEND = "progen_extended"
@@ -29,15 +31,14 @@ FILE_PREPEND = "progen_extended"
 def train_progen_extended(
     learning_rate=LEARNING_RATE,
     loss_function=LOSS_FUNCTION,
-    n_data=N_DATA,
-    test_split=TEST_SPLIT,
+    n_data=None,
+    test_data_indexes=None,
+    test_split=None,
     batch_size=BATCH_SIZE,
     n_epochs=N_EPOCHS,
     evaluation_period=EVALUATION_PERIOD,
-
     state_dict_path: str = None,
     absolute_paths=False,
-
     save_path: str = None,
     save_name: str = None,
     save_state_dict: str = None,
@@ -57,13 +58,31 @@ def train_progen_extended(
 
     print("Loading GB1 data")
     tokenize = lambda sequence: tokenizer.encode(sequence).ids
-    train_sequences, train_fitnesses, test_sequences, test_fitnesses = get_GB1_dataset(
-        tokenize=tokenize,
-        test_split=test_split,
-        shuffle=True,
-        n_data=n_data,
-        device=device,
-    )
+    if test_data_indexes:
+        print("using [test_data_indexes] to select test data, [test_split] will be ignored")
+        test_sequences, test_fitnesses = get_GB1_dataset(
+            tokenize=tokenize,
+            shuffle=False,
+            data_indexes=test_data_indexes,
+            device=device,
+        )
+        print(f"sampling {n_data} data for training")
+        train_sequences, train_fitnesses = get_GB1_dataset(
+            tokenize=tokenize,
+            shuffle=True,
+            n_data=n_data,
+            exclude_indexes=test_data_indexes,
+            device=device,
+        )
+    else:
+        print(f"sampling {n_data} data with [test_split] = {test_split}")
+        train_sequences, train_fitnesses, test_sequences, test_fitnesses = get_GB1_dataset(
+            tokenize=tokenize,
+            test_split=test_split,
+            shuffle=True,
+            n_data=n_data,
+            device=device,
+        )
 
     print("Initializing model")
     model = init_model(
@@ -126,4 +145,7 @@ if __name__ == "__main__":
         state_dict_path=LOAD_MODEL,
         save_path=SAVE_PATH,
         save_name=SAVE_NAME,
+        n_data=N_DATA,
+        test_data_indexes=TEST_DATA_INDEXES,
+        test_split=TEST_SPLIT,
     )
