@@ -1,5 +1,3 @@
-import torch
-
 from lib.model.progen.init_model import init_model as init_progen_model
 from lib.model.progen.extended.model_states import load_model_states
 from lib.model.progen.extended.TransformerExtended import TransformerExtended
