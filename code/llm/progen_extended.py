@@ -10,19 +10,21 @@ from lib.utils.file import save_pt_file
 
 # Function defaults
 LEARNING_RATE = 1e-3
-LOSS_FUNCTION = torch.nn.functional.mse_loss
-BATCH_SIZE = 1000
+#LOSS_FUNCTION = torch.nn.functional.mse_loss
+LOSS_FUNCTION = torch.nn.functional.l1_loss
+BATCH_SIZE = 100
 N_EPOCHS = 1
-EVALUATION_PERIOD = 1  # in number of batches
+EVALUATION_PERIOD = 1  # [number of batches]
 
 # Script settings
-N_DATA = None # all data = 149631
-TEST_SPLIT = None
-TEST_DATA_INDEXES = [0, 1, 18, 74, 519, 623, 949, 32322, 50456, 49771]
+N_DATA = None  # all data = 149631
+TEST_SPLIT = 0.1
+TEST_DATA_INDEXES = None
+FILTER_DATA = lambda df: df.loc[df["Fitness"] >= 1.0]  # 3644 variants
 
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "data_select_02"
+SAVE_NAME = "data_filter_04"
 
 # Constants
 FILE_PREPEND = "progen_extended"
@@ -32,6 +34,7 @@ def train_progen_extended(
     learning_rate=LEARNING_RATE,
     loss_function=LOSS_FUNCTION,
     n_data=None,
+    filter_data=None,
     test_data_indexes=None,
     test_split=None,
     batch_size=BATCH_SIZE,
@@ -59,7 +62,9 @@ def train_progen_extended(
     print("Loading GB1 data")
     tokenize = lambda sequence: tokenizer.encode(sequence).ids
     if test_data_indexes:
-        print("using [test_data_indexes] to select test data, [test_split] will be ignored")
+        print(
+            "using [test_data_indexes] to select test data, [test_split] will be ignored"
+        )
         test_sequences, test_fitnesses = get_GB1_dataset(
             tokenize=tokenize,
             shuffle=False,
@@ -69,6 +74,7 @@ def train_progen_extended(
         print(f"sampling {n_data} data for training")
         train_sequences, train_fitnesses = get_GB1_dataset(
             tokenize=tokenize,
+            filter_data=filter_data,
             shuffle=True,
             n_data=n_data,
             exclude_indexes=test_data_indexes,
@@ -76,8 +82,14 @@ def train_progen_extended(
         )
     else:
         print(f"sampling {n_data} data with [test_split] = {test_split}")
-        train_sequences, train_fitnesses, test_sequences, test_fitnesses = get_GB1_dataset(
+        (
+            train_sequences,
+            train_fitnesses,
+            test_sequences,
+            test_fitnesses,
+        ) = get_GB1_dataset(
             tokenize=tokenize,
+            filter_data=filter_data,
             test_split=test_split,
             shuffle=True,
             n_data=n_data,
@@ -146,6 +158,7 @@ if __name__ == "__main__":
         save_path=SAVE_PATH,
         save_name=SAVE_NAME,
         n_data=N_DATA,
+        filter_data=FILTER_DATA,
         test_data_indexes=TEST_DATA_INDEXES,
         test_split=TEST_SPLIT,
     )

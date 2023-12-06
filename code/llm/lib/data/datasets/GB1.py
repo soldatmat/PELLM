@@ -15,6 +15,7 @@ MUTATION_POSITIONS = [38, 39, 40, 53]  # [39, 40, 41, 54] - 1 for indexing
 def get_GB1_dataset(
     tokenize=None,
     raw=False,
+    filter_data=None,
     test_split: float = None,
     shuffle=True,
     data_indexes=None,
@@ -27,6 +28,8 @@ def get_GB1_dataset(
         df = df.iloc[data_indexes]
     if exclude_indexes:
         df = df.drop(exclude_indexes)
+    if filter_data:
+        df = filter_data(df)
     if shuffle:
         df = df.sample(frac=1)
     if n_data:
