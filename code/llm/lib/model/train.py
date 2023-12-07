@@ -32,8 +32,9 @@ def train(
     loss_history[0, -1] = evaluation_step(
         model, device, test_data, test_labels, test_batch_borders, loss_function
     )
-    evals = 0
     for epoch in range(n_epochs):
+        train_data, train_labels = shuffle_data(train_data, train_labels)
+        evals = 0
         for batch in range(train_n_batches):
             training_step(
                 model,
@@ -130,3 +131,9 @@ def evaluation_print(loss, epoch, batch):
     print(
         epoch_str + epoch_sep + batch_str + batch_sep + f"mean test-data loss = {loss}"
     )
+
+def shuffle_data(data, labels):
+    indexes = torch.randperm(len(labels))
+    shuffled_data = data[indexes]
+    shuffled_labels = labels[indexes]
+    return shuffled_data, shuffled_labels
