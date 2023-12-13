@@ -1,10 +1,12 @@
+import random
 import torch
+from sklearn.model_selection import train_test_split
 
 from lib.model.extended.init_model import init_model
 from lib.model.extended.model_states import save_model_states
 from lib.model.train import train
 from lib.model.progen.init_tokenizer import init_tokenizer
-from lib.data.datasets.GB1 import get_GB1_dataset
+from lib.data.datasets.GB1 import get_GB1_dataset, tokenize_batch
 from lib.utils.file import save_pt_file
 
 
@@ -12,32 +14,30 @@ from lib.utils.file import save_pt_file
 LEARNING_RATE = 1e-3
 # LOSS_FUNCTION = torch.nn.functional.mse_loss
 LOSS_FUNCTION = torch.nn.functional.l1_loss
-BATCH_SIZE = 1
-N_EPOCHS = 3
-EVALUATION_PERIOD = 1  # [number of batches]
+BATCH_SIZE = 100
+N_EPOCHS = 1
+EVALUATION_PERIOD = 100  # [number of batches]
 
 # Script settings
+EXTRACT_LABELS = lambda sequences : extract_number_of('A', sequences)
 N_DATA = None  # all data = 149631
-TEST_SPLIT = None
-TEST_DATA_INDEXES = None
-#FILTER_DATA = None
-FILTER_DATA = lambda df: df.loc[df["Fitness"] >= 6.0]  # 27 variants
-#FILTER_DATA = lambda df: df.iloc[[0, 1, 18, 74, 519, 623, 949, 32322, 50456, 49771]]
+TEST_SPLIT = 0.01
+FILTER_DATA = None
 
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "data_filter_09"
+SAVE_NAME = "trivial_A_02"
 
 # Constants
 FILE_PREPEND = "progen_extended"
 
 
 def train_progen_extended(
+    extract_labels,
     learning_rate=LEARNING_RATE,
     loss_function=LOSS_FUNCTION,
     n_data=None,
     filter_data=None,
-    test_data_indexes=None,
     test_split=None,
     batch_size=BATCH_SIZE,
     n_epochs=N_EPOCHS,
@@ -62,56 +62,34 @@ def train_progen_extended(
     print("Loading tokenizer")
     tokenizer = init_tokenizer()
 
-    print("Loading GB1 data")
+    #print(f"Loading {n_data} raw GB1 data")
+    #(
+    #    sequences,
+    #    fitnesses,
+    #) = get_GB1_dataset(
+    #    filter_data=filter_data,
+    #    shuffle=True,
+    #    n_data=n_data,
+    #    raw=True
+    #)
+
+    print(f"Generating data")
+    sequences = generate_sequences(100000, 100)
+
+    print(f"Extracting data labels")
+    labels = extract_labels(sequences).to(device)
+
+    print("Tokenizing sequences")
     tokenize = lambda sequence: tokenizer.encode(sequence).ids
-    if test_data_indexes is not None:
-        print(
-            "Using [test_data_indexes] to select test data, [test_split] will be ignored"
-        )
-        test_sequences, test_fitnesses = get_GB1_dataset(
-            tokenize=tokenize,
-            shuffle=False,
-            data_indexes=test_data_indexes,
-            device=device,
-        )
-        print(f"Sampling {n_data} data for training")
-        train_sequences, train_fitnesses = get_GB1_dataset(
-            tokenize=tokenize,
-            filter_data=filter_data,
-            shuffle=True,
-            n_data=n_data,
-            exclude_indexes=test_data_indexes,
-            device=device,
-        )
-    elif test_split is not None:
-        print(f"Sampling {n_data} data with [test_split] = {test_split}")
-        (
-            train_sequences,
-            train_fitnesses,
-            test_sequences,
-            test_fitnesses,
-        ) = get_GB1_dataset(
-            tokenize=tokenize,
-            filter_data=filter_data,
-            test_split=test_split,
-            shuffle=True,
-            n_data=n_data,
-            device=device,
-        )
-    else:
-        print(f"Sampling {n_data}, using same data for training and testing")
-        (
-            train_sequences,
-            train_fitnesses,
-        ) = get_GB1_dataset(
-            tokenize=tokenize,
-            filter_data=filter_data,
-            shuffle=True,
-            n_data=n_data,
-            device=device,
-        )
-        test_sequences = train_sequences
-        test_fitnesses = train_fitnesses
+    sequences = tokenize_batch(sequences, tokenize).to(device)
+
+    print(f"Splitting data with [test_split] = {test_split}")
+    (
+        train_sequences,
+        test_sequences,
+        train_labels,
+        test_labels,
+    ) = train_test_split(sequences, labels, test_size=test_split, shuffle=False)
 
     print("Initializing model")
     model = init_model(
@@ -124,9 +102,9 @@ def train_progen_extended(
         model=model,
         device=device,
         train_data=train_sequences,
-        train_labels=train_fitnesses,
+        train_labels=train_labels,
         test_data=test_sequences,
-        test_labels=test_fitnesses,
+        test_labels=test_labels,
         loss_function=loss_function,
         learning_rate=learning_rate,
         batch_size=batch_size,
@@ -169,13 +147,29 @@ def prepare_save_paths(
     return save_state_dict, save_history, save_train_params
 
 
+def extract_number_of(symbol, sequences):
+    counts = torch.zeros(len(sequences), dtype=torch.int32)
+    for s in range(len(sequences)):
+        counts[s] = sequences[s].count(symbol)
+    return counts
+
+
+def generate_sequences(n_sequences, sequence_length):
+    sequences = []
+    for s in range(n_sequences):
+        number_of_A = random.randint(0, sequence_length)
+        alphabet = number_of_A*'A'+(sequence_length-number_of_A)*'C'
+        sequences.append(''.join(random.choice(alphabet) for i in range(sequence_length)))
+    return sequences
+
+
 if __name__ == "__main__":
     loss_history = train_progen_extended(
+        extract_labels=EXTRACT_LABELS,
         state_dict_path=LOAD_MODEL,
         save_path=SAVE_PATH,
         save_name=SAVE_NAME,
         n_data=N_DATA,
         filter_data=FILTER_DATA,
-        test_data_indexes=TEST_DATA_INDEXES,
         test_split=TEST_SPLIT,
     )

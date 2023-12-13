@@ -37,10 +37,12 @@ def get_GB1_dataset(
     sequences, fitnesses = prepare_data(df)
     if raw:
         return sequences, fitnesses
+    print(sequences[1:5])
 
     if tokenize is not None:
         sequences = tokenize_batch(sequences, tokenize)
     else:
+        # TODO tensor of strings is not possible
         sequences = torch.tensor(sequences)
     fitnesses = torch.tensor(fitnesses)
 
@@ -94,7 +96,10 @@ def prepare_data(dfs: DataFrame):
 
 
 def tokenize_batch(sequences, tokenize):
-    tokenized = torch.empty((len(sequences), len(WT_SEQUENCE)), dtype=torch.int64)
+    """
+    All [sequences] have to be the same length
+    """
+    tokenized = torch.empty((len(sequences), len(sequences[0])), dtype=torch.int64)
     for s in range(len(sequences)):
         tokenized[s, :] = torch.tensor(tokenize(sequences[s]))
 
