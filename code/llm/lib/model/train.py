@@ -6,7 +6,7 @@ import torch
 LEARNING_RATE = 1e-3
 BATCH_SIZE = 1
 N_EPOCHS = 1
-EVALUATION_PERIOD = 1 # evaluate every {EVALUATION_PERIOD} train batches
+EVALUATION_PERIOD = 1  # evaluate every {EVALUATION_PERIOD} train batches
 
 
 def train(
@@ -22,6 +22,19 @@ def train(
     evaluation_period=EVALUATION_PERIOD,
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
 ):
+    def start_print():
+        print(
+            f'Starting training on device "{device}" with:\n'
+            + f"{len(train_data)} train data\n"
+            + f"{len(test_data)} test data\n"
+            + f"batch_size = {batch_size}\n"
+            + f"learning_rate = {learning_rate}\n"
+            + f"n_epochs = {n_epochs}\n"
+            + f"evaluation_period = {evaluation_period}\n"
+        )
+
+    start_print()
+
     train_batch_borders = get_batch_borders(len(train_data), batch_size)
     train_n_batches = len(train_batch_borders) - 1
     test_batch_borders = get_batch_borders(len(test_data), batch_size)
@@ -46,7 +59,7 @@ def train(
                 loss_function,
             )
 
-            if ((batch+1) % evaluation_period == 0) or (batch+1 == train_n_batches):
+            if ((batch + 1) % evaluation_period == 0) or (batch + 1 == train_n_batches):
                 loss_history[epoch + 1, evals] = evaluation_step(
                     model,
                     device,
@@ -131,6 +144,7 @@ def evaluation_print(loss, epoch, batch):
     print(
         epoch_str + epoch_sep + batch_str + batch_sep + f"mean test-data loss = {loss}"
     )
+
 
 def shuffle_data(data, labels):
     indexes = torch.randperm(len(labels))

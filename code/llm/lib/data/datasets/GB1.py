@@ -22,7 +22,27 @@ def get_GB1_dataset(
     exclude_indexes=None,
     n_data: int = None,
     device: torch.device = None,
+    return_variants=False,
 ):
+    def return_values():
+        if test_split is None:
+            if return_variants:
+                return sequences, fitness, variants
+            else:
+                return sequences, fitness
+        else:
+            if return_variants:
+                return (
+                    train_sequences,
+                    train_fitness,
+                    test_sequences,
+                    test_fitness,
+                    train_variants,
+                    test_variants,
+                )
+            else:
+                return train_sequences, train_fitness, test_sequences, test_fitness
+
     df = load_data()
     if data_indexes:
         df = df.iloc[data_indexes]
@@ -34,39 +54,64 @@ def get_GB1_dataset(
         df = df.sample(frac=1)
     if n_data:
         df = df[:n_data]
-    sequences, fitnesses = prepare_data(df)
-    if raw:
-        return sequences, fitnesses
-    print(sequences[1:5])
-
-    if tokenize is not None:
-        sequences = tokenize_batch(sequences, tokenize)
-    else:
-        # TODO tensor of strings is not possible
-        sequences = torch.tensor(sequences)
-    fitnesses = torch.tensor(fitnesses)
-
-    if device is not None:
-        sequences = sequences.to(device)
-        fitnesses = fitnesses.to(device)
+    fitness = df["Fitness"].values
+    variants = df["Variants"].values
 
     if test_split is not None:
         (
-            train_sequences,
-            test_sequences,
-            train_fitnesses,
-            test_fitnesses,
-        ) = train_test_split(sequences, fitnesses, test_size=test_split, shuffle=False)
-        return train_sequences, train_fitnesses, test_sequences, test_fitnesses
+            train_variants,
+            test_variants,
+            train_fitness,
+            test_fitness,
+        ) = train_test_split(variants, fitness, test_size=test_split, shuffle=False)
 
-    return sequences, fitnesses
+    if test_split is None:
+        sequences = prepare_sequences(variants)
+    else:
+        train_sequences = prepare_sequences(train_variants)
+        test_sequences = prepare_sequences(test_variants)
+
+    if raw:
+        return return_values()
+
+    if tokenize is not None:
+        if test_split is None:
+            sequences = tokenize_batch(sequences, tokenize)
+        else:
+            train_sequences = tokenize_batch(train_sequences, tokenize)
+            test_sequences = tokenize_batch(test_sequences, tokenize)
+    else:
+        # TODO tensor of strings is not possible
+        if test_split is None:
+            sequences = torch.tensor(sequences)
+        else:
+            train_sequences = torch.tensor(train_sequences)
+            test_sequences = torch.tensor(test_sequences)
+
+    if test_split is None:
+        fitness = torch.tensor(fitness)
+    else:
+        train_fitness = torch.tensor(train_fitness)
+        test_fitness = torch.tensor(test_fitness)
+
+    if device is not None:
+        if test_split is None:
+            sequences = sequences.to(device)
+            fitness = fitness.to(device)
+        else:
+            train_sequences = train_sequences.to(device)
+            test_sequences = test_sequences.to(device)
+            train_fitness = train_fitness.to(device)
+            test_fitness = test_fitness.to(device)
+
+    return return_values()
 
 
 def load_data():
     return pandas.read_excel(os.path.dirname(Path(__file__)) + "/" + GB1_PATH)
 
 
-def prepare_data(dfs: DataFrame):
+def prepare_sequences(variants):
     part1 = WT_SEQUENCE[: MUTATION_POSITIONS[0]]
     part2 = WT_SEQUENCE[MUTATION_POSITIONS[0] + 1 : MUTATION_POSITIONS[1]]
     part3 = WT_SEQUENCE[MUTATION_POSITIONS[1] + 1 : MUTATION_POSITIONS[2]]
@@ -74,7 +119,7 @@ def prepare_data(dfs: DataFrame):
     part5 = WT_SEQUENCE[MUTATION_POSITIONS[3] + 1 :]
 
     sequences = []
-    for variant in dfs.Variants:
+    for variant in variants:
         variant_sequence = (
             part1
             + variant[0]
@@ -87,12 +132,7 @@ def prepare_data(dfs: DataFrame):
             + part5
         )
         sequences.append(variant_sequence)
-
-    fitnesses = []
-    for fitness in dfs.Fitness:
-        fitnesses.append(fitness)
-
-    return sequences, fitnesses
+    return sequences
 
 
 def tokenize_batch(sequences, tokenize):
