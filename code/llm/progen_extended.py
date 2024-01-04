@@ -14,9 +14,9 @@ from lib.data.data import resample_uniform
 LEARNING_RATE = 1e-3
 # LOSS_FUNCTION = torch.nn.functional.mse_loss
 LOSS_FUNCTION = torch.nn.functional.l1_loss
-BATCH_SIZE = 100
-N_EPOCHS = 1
-EVALUATION_PERIOD = 1  # [number of batches]
+BATCH_SIZE = 1
+N_EPOCHS = 5
+EVALUATION_PERIOD = 100  # [number of batches]
 
 # Script settings
 N_DATA = None  # all data = 149631
@@ -29,7 +29,7 @@ FILTER_DATA = lambda df: resample_uniform(df, bins=[0.0, 1.0, max(df["Fitness"])
 
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "data_balanced_01"
+SAVE_NAME = "data_balanced_02"
 
 # Constants
 FILE_PREPEND = "progen_extended"
