@@ -5,7 +5,7 @@ import pandas
 
 AMINO_ACIDS = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
 
-MISSING_FITNESS = 0 # default fitness for missing variants
+MISSING_FITNESS = 0. # default fitness for missing variants
 START_OPTIONS = ['wt', 'all'] # 'wt' - start from the wild type variant, 'all' - run single-mutation walk from each variant
 
 # Specific to data
