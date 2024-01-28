@@ -15,8 +15,8 @@ LEARNING_RATE = 1e-3
 # LOSS_FUNCTION = torch.nn.functional.mse_loss
 LOSS_FUNCTION = torch.nn.functional.l1_loss
 BATCH_SIZE = 1
-N_EPOCHS = 5
-EVALUATION_PERIOD = 100  # [number of batches]
+N_EPOCHS = 1
+EVALUATION_PERIOD = 1000  # [number of batches]
 
 # Script settings
 N_DATA = None  # all data = 149631
@@ -25,11 +25,11 @@ TEST_DATA_INDEXES = None
 # FILTER_DATA = None
 # FILTER_DATA = lambda df: df.loc[df["Fitness"] >= 6.0]  # 27 variants
 # FILTER_DATA = lambda df: df.iloc[[0, 1, 18, 74, 519, 623, 949, 32322, 50456, 49771]]
-FILTER_DATA = lambda df: resample_uniform(df, bins=[0.0, 1.0, max(df["Fitness"])])
+FILTER_DATA = lambda df: resample_uniform(df, bins=[1.0, 3.0, max(df["Fitness"])])
 
 LOAD_MODEL = ""
 SAVE_PATH = "/models"
-SAVE_NAME = "data_balanced_02"
+SAVE_NAME = "data_balanced_05"
 
 # Constants
 FILE_PREPEND = "progen_extended"
