@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 
 import pandas
-from pandas import DataFrame
 from sklearn.model_selection import train_test_split
 import torch
 
