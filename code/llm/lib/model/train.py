@@ -39,7 +39,8 @@ def train(
     train_n_batches = len(train_batch_borders) - 1
     test_batch_borders = get_batch_borders(len(test_data), batch_size)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    #optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
 
     loss_history = init_loss_history(n_epochs, train_n_batches, evaluation_period)
     loss_history[0, -1] = evaluation_step(
@@ -92,7 +93,10 @@ def training_step(model, train_data, train_labels, optimizer, loss_function):
     model.train()
 
     optimizer.zero_grad()
-    output = model(train_data)[:, -1, 0]
+    output = model(train_data)
+
+    # output = output[:, -1, 0] # ! changes grad
+    train_labels = train_labels.view(train_labels.size()[0], 1)
 
     loss = loss_function(output, train_labels)
     loss.backward()
@@ -113,11 +117,14 @@ def evaluation_step(
     with torch.no_grad():
         outputs = torch.empty(len(test_data)).to(device)
         for batch in range(len(test_batch_borders) - 1):
-            outputs[test_batch_borders[batch] : test_batch_borders[batch + 1]] = model(
+            out = model(
                 test_data[test_batch_borders[batch] : test_batch_borders[batch + 1]]
-            )[:, -1, 0]
+            )
+            # out = out[:, -1, 0]
+            out = out[:, 0]
+            outputs[test_batch_borders[batch] : test_batch_borders[batch + 1]] = out
 
-        loss = loss_function(outputs, test_labels)
+        loss = loss_function(outputs, test_labels)        
         evaluation_print(loss, epoch_idx, batch_idx)
         return loss
 
@@ -142,7 +149,7 @@ def evaluation_print(loss, epoch, batch):
     else:
         batch_sep = ": "
     print(
-        epoch_str + epoch_sep + batch_str + batch_sep + f"mean test-data loss = {loss}"
+        epoch_str + epoch_sep + batch_str + batch_sep + f"evaluation loss = {loss}"
     )
 
 

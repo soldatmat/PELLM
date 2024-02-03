@@ -33,7 +33,7 @@ def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_
         # get top [n_parents] variants from lib
         evaluated_lib = []
         for variant in lib:
-            fitness = fitness_dict[variant]
+            fitness = fitness_dict.get(variant, MISSING_FITNESS)
 
             # update fitness progress
             if fitness > fitness_progression[-1]:

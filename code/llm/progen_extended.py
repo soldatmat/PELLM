@@ -8,6 +8,7 @@ from lib.model.progen.init_tokenizer import init_tokenizer
 from lib.data.datasets.GB1 import get_GB1_dataset
 from lib.utils.file import save_pt_file
 from lib.data.data import resample_uniform
+from lib.utils.path import prepare_save_paths
 
 
 # Function defaults
@@ -54,7 +55,7 @@ def train_progen_extended(
 ):
     if save_path and save_name:
         save_state_dict, save_info = prepare_save_paths(
-            save_path, save_name, save_state_dict, save_info
+            save_path, FILE_PREPEND, save_name, save_state_dict, save_info
         )
 
     print("Connecting to device")
@@ -176,14 +177,6 @@ def train_progen_extended(
         )
 
     return loss_history
-
-
-def prepare_save_paths(save_path, save_name, save_state_dict, save_info):
-    if save_state_dict is None:
-        save_state_dict = save_path + "/" + FILE_PREPEND + "_" + save_name + ".pt"
-    if save_info is None:
-        save_info = save_path + "/" + FILE_PREPEND + "_" + save_name + "_info.pt"
-    return save_state_dict, save_info
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ def init_model(state_dict_path: str = None, absolute_path=False):
 
     model = TransformerExtended(transformer=transformer)
 
-    # Load learned weights
+    # Load learnt weights
     if state_dict_path:
         load_model_states(
             model,
