@@ -79,13 +79,13 @@ def get_GB1_dataset(
         else:
             train_sequences = tokenize_batch(train_sequences, tokenize)
             test_sequences = tokenize_batch(test_sequences, tokenize)
-    else:
-        # TODO tensor of strings is not possible
-        if test_split is None:
-            sequences = torch.tensor(sequences)
-        else:
-            train_sequences = torch.tensor(train_sequences)
-            test_sequences = torch.tensor(test_sequences)
+    # TODO tensor of strings is not possible
+    #else:
+    #    if test_split is None:
+    #        sequences = torch.tensor(sequences)
+    #    else:
+    #        train_sequences = torch.tensor(train_sequences)
+    #        test_sequences = torch.tensor(test_sequences)
 
     if test_split is None:
         fitness = torch.tensor(fitness)
@@ -93,7 +93,8 @@ def get_GB1_dataset(
         train_fitness = torch.tensor(train_fitness)
         test_fitness = torch.tensor(test_fitness)
 
-    if device is not None:
+    # TODO tensor of strings is not possible
+    if (device is not None) & (tokenize is not None):
         if test_split is None:
             sequences = sequences.to(device)
             fitness = fitness.to(device)
