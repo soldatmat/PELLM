@@ -2,8 +2,8 @@ from lib.model.extended.model_states import load_model_states
 from lib.model.single_layer.SingleLayer import SingleLayer
 
 
-def init_model(activation_function, state_dict_path: str = None, absolute_path=False):
-    model = SingleLayer(activation_function=activation_function)
+def init_model(model, activation_function, embedding_size, state_dict_path: str = None, absolute_path=False):
+    model = model(activation_function, embedding_size)
 
     # Load learnt weights
     if state_dict_path:

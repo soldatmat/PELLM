@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 
 from lib.model.train import train
 from lib.model.single_layer.SingleLayer import SingleLayer
+from lib.model.single_layer.TwoLayer import TwoLayer
 from lib.utils.file import save_pt_file
 from lib.utils.path import prepare_save_paths
 from lib.data.data import resample_uniform
@@ -11,39 +12,49 @@ from lib.model.extended.model_states import save_model_states
 from lib.functional.wieghted_l1_loss import weighted_l1_Loss
 
 
-DATA_PATH = "./../../data/GB1/progen2_dataframe.pt"
+# DATA_PATH = "./../../data/GB1/progen2_dataframe.pt"
+DATA_PATH = "./../../data/GB1/esm-1b_dataframe.pt"
+
 # INPUT_PATH = "./../../data/GB1/progen2_embedding.pt"
 # FITNESS_PATH = "./../../data/GB1/progen2_fitness.pt"
 # LABELS_PATH = "./../../data/GB1/progen2_variants.pt"
 
 TEST_SPLIT = None
 
-#LOSS_FUNCTION = torch.nn.functional.l1_loss
-LOSS_FUNCTION = weighted_l1_Loss()
+LOSS_FUNCTION = torch.nn.functional.l1_loss
+# LOSS_FUNCTION = weighted_l1_Loss()
 
 # Tested with resample_uniform(df, bins=[1.0, max(df["Fitness"])])
-LEARNING_RATE = 1e-7 # Sigmoid
-#LEARNING_RATE = 1e-7 # Identity
+# LEARNING_RATE = 1e-7 # Signmoid Identity ProGen2 1l
+LEARNING_RATE = 1e-4  # Sigmoid ESM-1b 2l
+# LEARNING_RATE = 1e-5  # Sigmoid ProGen2 2l
+
+NORMALIZED_FITNESS = True
 
 BATCH_SIZE = 1
-N_EPOCHS = 1
-EVALUATION_PERIOD = 500
+N_EPOCHS = 5
+EVALUATION_PERIOD = 10
 
-#FILTER_DATA = None
-FILTER_DATA = lambda df: resample_uniform(df, bins=[1.0, max(df["Fitness"])])
-#FILTER_DATA = lambda df: resample_uniform(df, bins=[0.0, 0.5])[0:1000]
+# FILTER_DATA = None
+FILTER_DATA = lambda df: resample_uniform(df, bins=[6.0, max(df["Fitness"])])
+# FILTER_DATA = lambda df: resample_uniform(df, bins=[0.0, 0.5])[0:1000]
 
-MODEL = SingleLayer(activation_function=torch.nn.Sigmoid())
-#MODEL = SingleLayer(activation_function=torch.nn.LeakyReLU())
-#MODEL = SingleLayer(activation_function=torch.nn.Identity())
+# EMBEDDING_SIZE = 1024  # Progen2
+EMBEDDING_SIZE = 1280  # ESM-1b
 
-SAVE_PATH = "/models/single_layer"
-SAVE_NAME = "sigmoid_15"
-#SAVE_NAME = "leakyRELU_01"
-#SAVE_NAME = "identity_02"
+# MODEL = SingleLayer(activation_function=torch.nn.Sigmoid(), embedding_size=EMBEDDING_SIZE)
+# MODEL = SingleLayer(activation_function=torch.nn.LeakyReLU(), embedding_size=EMBEDDING_SIZE)
+# MODEL = SingleLayer(activation_function=torch.nn.Identity(), embedding_size=EMBEDDING_SIZE)
+MODEL = TwoLayer(activation_function=torch.nn.Sigmoid(), embedding_size=EMBEDDING_SIZE)
+# MODEL = TwoLayer(activation_function=torch.nn.Identity(), embedding_size=EMBEDDING_SIZE)
+
+SAVE_PATH = "/models/two_layer_esm-1b"
+SAVE_NAME = "sigmoid_04"
+# SAVE_NAME = "leakyRELU_01"
+# SAVE_NAME = "identity_01"
 
 # Constants
-FILE_PREPEND = "single_layer"
+FILE_PREPEND = "two_layer_esm-1b"
 
 
 def train_predictor(
@@ -63,7 +74,7 @@ def train_predictor(
 ):
     """
     [data_path]:    relative path to a ".pt" file with pandas DataFrame
-                    with columns 'label', 'embedding', 'fitness'
+                    with columns 'Variants', 'Embedding', 'Fitness' (or 'Fitness_norm' if `normalized_fitness` is True)
     """
     save_state_dict, save_info = prepare_save_paths(
         save_path,
@@ -95,7 +106,6 @@ def train_predictor(
         print("Using the same data for training and evaluation")
         train_data = data
         test_data = data
-
 
     train_embedding = torch.stack(tuple(train_data.Embedding.values)).to(device)
     test_embedding = torch.stack(tuple(test_data.Embedding.values)).to(device)
@@ -172,4 +182,5 @@ if __name__ == "__main__":
         save_name=SAVE_NAME,
         save_info=True,
         filter_data=FILTER_DATA,
+        normalized_fitness=NORMALIZED_FITNESS,
     )
