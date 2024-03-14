@@ -49,7 +49,7 @@ MODEL = TwoLayer(activation_function=torch.nn.Sigmoid(), embedding_size=EMBEDDIN
 # MODEL = TwoLayer(activation_function=torch.nn.Identity(), embedding_size=EMBEDDING_SIZE)
 
 SAVE_PATH = "/models/two_layer_esm-1b"
-SAVE_NAME = "sigmoid_04"
+SAVE_NAME = "sigmoid_05"
 # SAVE_NAME = "leakyRELU_01"
 # SAVE_NAME = "identity_01"
 

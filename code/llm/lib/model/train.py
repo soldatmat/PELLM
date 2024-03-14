@@ -35,6 +35,12 @@ def train(
 
     start_print()
 
+    model = model.to(device)
+    train_data = train_data.to(device)
+    train_labels = train_labels.to(device)
+    test_data = test_data.to(device)
+    test_labels = test_labels.to(device)
+
     train_batch_borders = get_batch_borders(len(train_data), batch_size)
     train_n_batches = len(train_batch_borders) - 1
     test_batch_borders = get_batch_borders(len(test_data), batch_size)
