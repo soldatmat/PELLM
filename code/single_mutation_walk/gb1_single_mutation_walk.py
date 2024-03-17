@@ -2,7 +2,7 @@
 
 import copy
 import pandas
-from itertools import combinations_with_replacement
+from itertools import product
 
 AMINO_ACIDS = [
     "A",
@@ -82,13 +82,13 @@ def main(start=START_OPTIONS[0]):
     if start == START_OPTIONS[0]:
         start_variants = [WILD_TYPE_VARIANT]
     elif start == START_OPTIONS[1]:
-        start_variants = variants  # TODO start only from reported variants
+        start_variants = variants
     elif start == START_OPTIONS[2]:
         start_variants = [
             "".join(variant)
-            for variant in combinations_with_replacement(
+            for variant in product(
                 AMINO_ACIDS,
-                len(MUTATION_POSITIONS),
+                repeat = len(MUTATION_POSITIONS),
             )
         ]
     else:
