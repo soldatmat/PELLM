@@ -52,8 +52,8 @@ def single_mutation_walk(start_variant, mutation_positions, fitness_dict):
     fitness_progression = [fitness_dict.get(variant, MISSING_FITNESS)]
     while unresolved_positions:
         # fix an amino acid at an unresolved position which gives the highest fitness
-        best_p = mutation_positions[0]
-        best_aa = variant[mutation_positions[0]]
+        best_p = 0
+        best_aa = variant[unresolved_positions[best_p]]
         for p in range(len(unresolved_positions)):
             pos = unresolved_positions[p]
             for aa in AMINO_ACIDS:
@@ -68,9 +68,8 @@ def single_mutation_walk(start_variant, mutation_positions, fitness_dict):
                 else:
                     fitness_progression.append(fitness_progression[-1])
 
-        if best_p is not None:
-            best_pos = unresolved_positions[best_p]
-            variant = variant[:best_pos] + best_aa + variant[best_pos + 1 :]
+        best_pos = unresolved_positions[best_p]
+        variant = variant[:best_pos] + best_aa + variant[best_pos + 1 :]
         unresolved_positions.pop(best_p)
 
     return variant, fitness_progression
@@ -88,7 +87,7 @@ def main(start=START_OPTIONS[0]):
             "".join(variant)
             for variant in product(
                 AMINO_ACIDS,
-                repeat = len(MUTATION_POSITIONS),
+                repeat=len(MUTATION_POSITIONS),
             )
         ]
     else:
