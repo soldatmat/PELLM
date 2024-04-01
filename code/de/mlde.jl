@@ -9,14 +9,11 @@ pushfirst!(pyimport("sys")."path", joinpath(@__DIR__))
 nn_model = pyimport("two_layer_perceptron")
 
 include("types.jl")
-include("llm.jl")
 include("utils.jl")
 include("embedding_nn.jl")
-include("llm_embedding_extractor.jl")
 include("dict_embedding_extractor.jl")
-include("esm1b.jl")
 include("top_k_predicted.jl")
-include("llm_sampler.jl")
+include("no_mutagenesis.jl")
 
 GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
@@ -45,29 +42,17 @@ fitness_csv_file = "esm-1b_fitness_norm.csv"
 fitness = CSV.read(joinpath(data_path, fitness_csv_file), DataFrame)
 fitness = [values(row)[1] for row in eachrow(fitness)]
 
-# ___ LLM ___
-llm = ESM1b()
-mask_token = llm.alphabet.mask_idx
-mask_string = llm.alphabet.all_toks[llm.alphabet.mask_idx+1] # +1 for julia vs Python indexing
-
 # ___ Screening ___
-# TODO use normalized fitness
-# TODO implement loading from pandas dataframe
-#screening = DESilico.DictScreening(joinpath(data_path, xlxs_file), missing_fitness_value)
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
 # ___ SelectionStrategy ___
-#embedding_extractor = LLMEmbeddingExtractor(llm; return_tensor=true)
 embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequence_embeddings))
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
-#selection_strategy = TopKPredicted(fitness_predictor, length(variants[1]), alphabet; k=8000)
-selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=8000) # AFP-DE k=8000 (! + 1000 other sequences)
+selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=1, repeat=false)
 
 # ___ Mutagenesis ___
-# TODO LLMSampler needs to enforce diversity
-alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
-mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE
+mutagenesis = NoMutagenesis()
 
 # ___ Run de! ___
 wt_variant = Variant(wt_sequence, screening(wt_sequence))
@@ -77,10 +62,10 @@ de!(
     screening,
     selection_strategy,
     mutagenesis,
-    n_iterations=2,
+    n_iterations=348,
 )
 println(sequence_space.top_variant)
 
 # ___ Plot results ___
 using Plots
-histogram(map(v->v.fitness, [v for v in sequence_space.variants]), bins=range(0,1,length=20))
+histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0, 1, length=20))

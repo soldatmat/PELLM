@@ -11,3 +11,5 @@ default_torch_device() = torch.device(torch.cuda.is_available() ? "cuda" : "cpu"
 tensor_to_matrix(tensor::PyObject) = tensor.cpu().numpy()
 
 ensure_tensor(data::Any) = pybuiltin("type")(data) == torch.Tensor ? data : torch.tensor(data)
+
+recombine_symbols(sequence_length::Int, alphabet::Set{Char}) = map(sequence -> collect(sequence), collect(Iterators.product(ntuple(_ -> alphabet, sequence_length)...))[:])
