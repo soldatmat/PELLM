@@ -1,3 +1,5 @@
+using PyCall
+
 torch = pyimport("torch")
 
 function _tensor_probabilities_to_touples(probabilities::PyObject, alphabet::Vector{Char})

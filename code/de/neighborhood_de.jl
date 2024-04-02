@@ -2,18 +2,13 @@ using DESilico
 using Distances
 using CSV
 using DataFrames
-using PyCall
-
-torch = pyimport("torch")
-
-pushfirst!(pyimport("sys")."path", joinpath(@__DIR__))
+using FileIO
 
 include("types.jl")
 include("utils.jl")
 include("library_select.jl")
+include("repeating_library_select.jl")
 include("neighborhood_search.jl")
-
-GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
 # ___ Function definitions ___
 function _construct_neighborhoods(sequence_embeddings::AbstractMatrix{Float64})
@@ -44,13 +39,15 @@ seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
 sequence_embeddings = CSV.read(joinpath(data_path, seq_embedding_csv_file), DataFrame)
 sequence_embeddings = Matrix{Float64}(sequence_embeddings)
 sequence_embeddings = transpose(sequence_embeddings)
-#sequence_embeddings = [collect(values(row)) for row in eachrow(sequence_embeddings)]
 
-function _get_sequences(csv_file::String)
+function _get_variants(csv_file::String)
     variants = CSV.read(joinpath(data_path, csv_file), DataFrame)
-    variants = [collect(values(row)[1]) for row in eachrow(variants)]
-    map(v -> collect(wt_string[1:mutation_positions[1]-1] * v[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * v[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * v[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * v[4] * wt_string[mutation_positions[4]+1:end]), variants)
+    [collect(values(row)[1]) for row in eachrow(variants)]
 end
+_construct_sequence(variant::Vector{Char}) = collect(wt_string[1:mutation_positions[1]-1] * variant[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * variant[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * variant[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * variant[4] * wt_string[mutation_positions[4]+1:end])
+_construct_sequences(variants::AbstractVector{Vector{Char}}) = map(v -> _construct_sequence(v), variants)
+_get_sequences(csv_file::String) = _construct_sequences(_get_variants(csv_file))
+
 sequences = _get_sequences("esm-1b_variants.csv")
 sequences_complete = _get_sequences("esm-1b_variants_complete.csv")
 
@@ -63,28 +60,40 @@ screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_
 
 # ___ SelectionStrategy ___
 selection_strategy = LibrarySelect(1)
+#selection_strategy = RepeatingLibrarySelect()
 
 # ___ Mutagenesis ___
 #neighborhoods = _construct_neighborhoods(sequence_embeddings)
 neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", "gb1_esm1b_euclidean.jld2"))["neighborhoods"]
-knn = 32
+knn = 16
 mutagenesis = NeighborhoodSearch(
     sequences_complete,
-    neighborhoods[1:knn,:];
+    neighborhoods[1:knn, :];
     repeat=false,
     screened=[wt_sequence],
+    #n=1,
 )
+
+# ___ Change starting variant ___
+#starting_mutant = "DAKQ" # "SRCG" "HECA"
+#wt_sequence = collect(wt_string[1:mutation_positions[1]-1]*starting_mutant[1]*wt_string[mutation_positions[1]+1:mutation_positions[2]-1]*starting_mutant[2]*wt_string[mutation_positions[2]+1:mutation_positions[3]-1]*starting_mutant[3]*wt_string[mutation_positions[3]+1:mutation_positions[4]-1]*starting_mutant[4]*wt_string[mutation_positions[4]+1:end])
 
 # ___ Run de! ___
 wt_variant = Variant(wt_sequence, screening(wt_sequence))
 sequence_space = SequenceSpace([wt_variant])
-de!(
-    sequence_space;
-    screening,
-    selection_strategy,
-    mutagenesis,
-    n_iterations=22,
-)
+
+history = [sequence_space.top_variant.fitness]
+for i = 1:24
+    de!(
+        sequence_space;
+        screening,
+        selection_strategy,
+        mutagenesis,
+        n_iterations=1,
+    )
+    append!(history, sequence_space.top_variant.fitness)
+end
+
 # 23 (239) for knn=16 to get 1.0 fitness
 # 17 (280) for knn=24 to get 1.0 fitness
 # 22 (430) for knn=32 to get 1.0 fitness
@@ -93,4 +102,5 @@ length(sequence_space.variants)
 
 # ___ Plot results ___
 using Plots
-histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0, 1, length=20))
+histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0.0, 1.01, length=20))
+plot(0:length(history)-1, history)

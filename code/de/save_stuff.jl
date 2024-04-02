@@ -32,3 +32,14 @@ torch.save(fp_model.state_dict(), joinpath(data_path, "TwoLayerPreceptron_state_
 
 tm = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 tm.load_state_dict(torch.load("fp_model.pt"))
+
+
+
+# ___ Python ___
+using PyCall
+pickle = pyimport("pickle")
+
+file_path = joinpath(@__DIR__, "data", "neighborhood_de", "results_complete.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([d["results"], d["screened"]], f)
+end

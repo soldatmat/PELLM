@@ -7,35 +7,39 @@ struct NeighborhoodSearch <: DESilico.Mutagenesis
     sequences::Vector{Vector{Char}}
     neighborhoods::Array{Int}
     repeat::Bool
-    screened::Union{Dict{Vector{Char}, Bool}, Nothing}
+    screened::Union{Dict{Vector{Char},Bool},Nothing}
+    n::Union{Int,Nothing}
 
-    function NeighborhoodSearch(sequences::Vector{Vector{Char}}, neighborhoods::Array{Int}, repeat::Bool, screened::Union{Dict{Vector{Char}, Bool}, Nothing})
+    function NeighborhoodSearch(sequences::Vector{Vector{Char}}, neighborhoods::Array{Int}, repeat::Bool, screened::Union{Dict{Vector{Char},Bool},Nothing}, n::Union{Int,Nothing})
         repeat || @assert !isnothing(screened)
-        new(sequences, neighborhoods, repeat, repeat ? nothing : screened)
+        new(sequences, neighborhoods, repeat, repeat ? nothing : screened, n)
     end
 end
 
-function NeighborhoodSearch(sequences, neighborhoods; repeat::Bool=false, screened::AbstractVector{Vector{Char}}=Vector{Vector{Char}}([]))
+function NeighborhoodSearch(sequences, neighborhoods; repeat::Bool=false, screened::AbstractVector{Vector{Char}}=Vector{Vector{Char}}([]), n::Union{Int,Nothing}=nothing)
     screened_dict = Dict(sequences .=> false)
     map(sequence -> screened_dict[sequence] = true, screened)
-    NeighborhoodSearch(sequences, neighborhoods, repeat, screened_dict)
+    NeighborhoodSearch(sequences, neighborhoods, repeat, screened_dict, n)
 end
 
 function (m::NeighborhoodSearch)(parents::AbstractVector{Vector{Char}})
     parent_indexes = map(parent -> findfirst(item -> item == parent, m.sequences), parents)
-    mutant_indexes =  mapreduce(p -> m.neighborhoods[:,p], vcat, parent_indexes)
+    mutant_indexes = mapreduce(p -> m.neighborhoods[:, p], vcat, parent_indexes)
     mutants = map(i -> m.sequences[i], mutant_indexes)
     if !m.repeat
         mutants = _filter_screened(mutants, m.screened)
-        _update_screened!(m, mutants)
     end
+    if !isnothing(m.n)
+        mutants = length(mutants) <= m.n ? mutants : sample(mutants, m.n, replace=false)
+    end
+    m.repeat || _update_screened!(m, mutants)
     #if length(mutants) == 0
     #    mutants = _sample_new_sequences(m)
     #end
-    println("Sending $(length(mutants)) mutants to Screening.")
+    #println("Sending $(length(mutants)) mutants to Screening.")
     return mutants
 end
-_filter_screened(sequences::AbstractVector{Vector{Char}}, screened::Dict{Vector{Char}, Bool}) = mapreduce(sequence -> screened[sequence] ? Vector{Vector{Char}}([]) : [sequence], vcat, sequences)
+_filter_screened(sequences::AbstractVector{Vector{Char}}, screened::Dict{Vector{Char},Bool}) = mapreduce(sequence -> screened[sequence] ? Vector{Vector{Char}}([]) : [sequence], vcat, sequences)
 _update_screened!(m::NeighborhoodSearch, sequences::AbstractVector{Vector{Char}}) = map(sequence -> m.screened[sequence] = true, sequences)
 
 function _sample_new_sequences(m::NeighborhoodSearch)
