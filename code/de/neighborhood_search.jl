@@ -30,7 +30,8 @@ function (m::NeighborhoodSearch)(parents::AbstractVector{Vector{Char}})
         mutants = _filter_screened(mutants, m.screened)
     end
     if !isnothing(m.n)
-        mutants = length(mutants) <= m.n ? mutants : sample(mutants, m.n, replace=false)
+        #mutants = length(mutants) <= m.n ? mutants : sample(mutants, m.n, replace=false)
+        mutants = length(mutants) <= m.n ? mutants : mutants[1:m.n]
     end
     m.repeat || _update_screened!(m, mutants)
     #if length(mutants) == 0

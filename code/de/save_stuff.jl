@@ -35,11 +35,25 @@ tm.load_state_dict(torch.load("fp_model.pt"))
 
 
 
+results = Vector{Float64}(undef, 5000)
+screened = Vector{Int}(undef, 5000)
+for i = 1:50
+    d = load(joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_$(i*100).jld2"))
+    results[1+(i-1)*100:i*100] = d["results"]
+    screened[1+(i-1)*100:i*100] = d["screened"]
+end
+save(
+    joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_1-5000.jld2"),
+    "results", results,
+    "screened", screened,
+)
+
+
 # ___ Python ___
 using PyCall
 pickle = pyimport("pickle")
 
-file_path = joinpath(@__DIR__, "data", "neighborhood_de", "results_complete.pkl")
+file_path = joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_1-5000.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
-    pickle.dump([d["results"], d["screened"]], f)
+    pickle.dump([results, screened], f)
 end

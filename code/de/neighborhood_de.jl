@@ -7,8 +7,10 @@ using FileIO
 include("types.jl")
 include("utils.jl")
 include("library_select.jl")
+include("cumulative_select.jl")
 include("repeating_library_select.jl")
 include("neighborhood_search.jl")
+include("distance_maximizer.jl")
 
 # ___ Function definitions ___
 function _construct_neighborhoods(sequence_embeddings::AbstractMatrix{Float64})
@@ -55,46 +57,52 @@ fitness_csv_file = "esm-1b_fitness_norm.csv"
 fitness = CSV.read(joinpath(data_path, fitness_csv_file), DataFrame)
 fitness = [values(row)[1] for row in eachrow(fitness)]
 
-# ___ Screening ___
-screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
-
-# ___ SelectionStrategy ___
-selection_strategy = LibrarySelect(1)
-#selection_strategy = RepeatingLibrarySelect()
-
-# ___ Mutagenesis ___
 #neighborhoods = _construct_neighborhoods(sequence_embeddings)
 neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", "gb1_esm1b_euclidean.jld2"))["neighborhoods"]
-knn = 16
-mutagenesis = NeighborhoodSearch(
-    sequences_complete,
-    neighborhoods[1:knn, :];
-    repeat=false,
-    screened=[wt_sequence],
-    #n=1,
-)
+
+screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
 # ___ Change starting variant ___
-#starting_mutant = "DAKQ" # "SRCG" "HECA"
-#wt_sequence = collect(wt_string[1:mutation_positions[1]-1]*starting_mutant[1]*wt_string[mutation_positions[1]+1:mutation_positions[2]-1]*starting_mutant[2]*wt_string[mutation_positions[2]+1:mutation_positions[3]-1]*starting_mutant[3]*wt_string[mutation_positions[3]+1:mutation_positions[4]-1]*starting_mutant[4]*wt_string[mutation_positions[4]+1:end])
+#starting_mutant = "NDYP" # bad: "DAKQ", good: "SRCG" "HECA"
+#wt_sequence = collect(wt_string[1:mutation_positions[1]-1] * starting_mutant[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * starting_mutant[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * starting_mutant[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * starting_mutant[4] * wt_string[mutation_positions[4]+1:end])
 
 # ___ Run de! ___
 wt_variant = Variant(wt_sequence, screening(wt_sequence))
 sequence_space = SequenceSpace([wt_variant])
 
-history = [sequence_space.top_variant.fitness]
-for i = 1:24
-    de!(
-        sequence_space;
-        screening,
-        selection_strategy,
-        mutagenesis,
-        n_iterations=1,
-    )
-    append!(history, sequence_space.top_variant.fitness)
-end
+distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings)
+cumulative_select = CumulativeSelect(sequence_space.population)
+de!(
+    sequence_space;
+    screening,
+    selection_strategy=cumulative_select,
+    mutagenesis=distance_maximizer,
+    n_iterations=9,
+)
 
-# 23 (239) for knn=16 to get 1.0 fitness
+knn = 16
+neighborhood_search = NeighborhoodSearch(
+    sequences_complete,
+    neighborhoods[1:knn, :];
+    repeat=false,
+    screened=map(variant -> variant.sequence, collect(sequence_space.variants)),
+    #n=1,
+)
+library_select = LibrarySelect(1, sequence_space.variants)
+#library_select = RepeatingLibrarySelect()
+parent_sequence = library_select()[1]
+sequence_space = SequenceSpace([Variant(parent_sequence, screening(parent_sequence))])
+DESilico.push_variants!(sequence_space, collect(library_select.library))
+de!(
+    sequence_space;
+    screening,
+    selection_strategy=library_select,
+    mutagenesis=neighborhood_search,
+    n_iterations=nothing,
+    screening_budget=384,
+)
+
+# 23 (239) for knn=16 to get 1.0 fitness, (RepeatingLibrarySelect + n=1 in n.s.) => (230)
 # 17 (280) for knn=24 to get 1.0 fitness
 # 22 (430) for knn=32 to get 1.0 fitness
 println(sequence_space.top_variant)
@@ -103,4 +111,4 @@ length(sequence_space.variants)
 # ___ Plot results ___
 using Plots
 histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0.0, 1.01, length=20))
-plot(0:length(history)-1, history)
+#plot(0:length(history)-1, history, ylim=(0.0, 1.0))

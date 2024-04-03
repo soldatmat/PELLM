@@ -5,17 +5,17 @@ struct LibrarySelect <: DESilico.SelectionStrategy
     k::Int
     library::Set{Variant}
 
-    function LibrarySelect(k::Int)
+    function LibrarySelect(k::Int, library::Set{Variant})
         k > 0 || throw(ArgumentError("`k` needs to be greater than 0"))
-        new(k, Set{Variant}([]))
+        new(k, library)
     end
 end
 
+LibrarySelect(k::Int) = LibrarySelect(k, Set{Variant}([]))
+
 function (ss::LibrarySelect)(variants::AbstractVector{Variant})
     map(variant -> push!(ss.library, variant), variants)
-    selection = _select_top_k!(ss)
-    #println(length(ss.library))
-    return selection
+    return _select_top_k!(ss)
 end
 function _select_top_k!(ss::LibrarySelect)
     variants = collect(ss.library)
@@ -27,3 +27,5 @@ function _select_first_k!(ss::LibrarySelect, variants::AbstractVector{Variant})
     map(variant -> delete!(ss.library, variant), selection)
     map(variant -> variant.sequence, selection)
 end
+
+(ss::LibrarySelect)() = ss(Vector{Variant}([]))
