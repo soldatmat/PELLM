@@ -10,7 +10,8 @@ AMINO_ACIDS = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 
 MUTATION_POSITIONS = [0, 1, 2, 3] # [39, 40, 41, 54] in the sequence (indexed from 1)
 WILD_TYPE_VARIANT = 'VDGV'
 def LOAD_DATA():
-    dfs = pandas.read_excel('../../data/GB1/elife-16965-supp1.xlsx')
+    #dfs = pandas.read_excel('../../data/GB1/elife-16965-supp1.xlsx')
+    dfs = pandas.read_excel('../../data/PhoQ/PhoQ.xlsx')
     variants = [v for v in dfs.Variants]
     variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
     return variants, variant_fitness

@@ -40,7 +40,8 @@ WILD_TYPE_VARIANT = "VDGV"
 
 
 def LOAD_DATA():
-    dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
+    #dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
+    dfs = pandas.read_excel("../../data/PhoQ/PhoQ.xlsx")
     variants = [v for v in dfs.Variants]
     variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
     return variants, variant_fitness
