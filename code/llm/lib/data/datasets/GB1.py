@@ -22,6 +22,9 @@ def get_GB1_dataset(
     n_data: int = None,
     device: torch.device = None,
     return_variants=False,
+    file_path=GB1_PATH,
+    wt_sequence=WT_SEQUENCE,
+    mutation_positions=MUTATION_POSITIONS,
 ):
     def return_values():
         if test_split is None:
@@ -42,7 +45,7 @@ def get_GB1_dataset(
             else:
                 return train_sequences, train_fitness, test_sequences, test_fitness
 
-    df = load_data()
+    df = load_data(file_path)
     if data_indexes:
         df = df.iloc[data_indexes]
     if exclude_indexes:
@@ -65,10 +68,10 @@ def get_GB1_dataset(
         ) = train_test_split(variants, fitness, test_size=test_split, shuffle=False)
 
     if test_split is None:
-        sequences = prepare_sequences(variants)
+        sequences = prepare_sequences(variants, wt_sequence, mutation_positions)
     else:
-        train_sequences = prepare_sequences(train_variants)
-        test_sequences = prepare_sequences(test_variants)
+        train_sequences = prepare_sequences(train_variants, wt_sequence, mutation_positions)
+        test_sequences = prepare_sequences(test_variants, wt_sequence, mutation_positions)
 
     if raw:
         return return_values()
@@ -80,7 +83,7 @@ def get_GB1_dataset(
             train_sequences = tokenize_batch(train_sequences, tokenize)
             test_sequences = tokenize_batch(test_sequences, tokenize)
     # TODO tensor of strings is not possible
-    #else:
+    # else:
     #    if test_split is None:
     #        sequences = torch.tensor(sequences)
     #    else:
@@ -107,16 +110,16 @@ def get_GB1_dataset(
     return return_values()
 
 
-def load_data():
-    return pandas.read_excel(os.path.dirname(Path(__file__)) + "/" + GB1_PATH)
+def load_data(file_path):
+    return pandas.read_excel(os.path.dirname(Path(__file__)) + "/" + file_path)
 
 
-def prepare_sequences(variants):
-    part1 = WT_SEQUENCE[: MUTATION_POSITIONS[0]]
-    part2 = WT_SEQUENCE[MUTATION_POSITIONS[0] + 1 : MUTATION_POSITIONS[1]]
-    part3 = WT_SEQUENCE[MUTATION_POSITIONS[1] + 1 : MUTATION_POSITIONS[2]]
-    part4 = WT_SEQUENCE[MUTATION_POSITIONS[2] + 1 : MUTATION_POSITIONS[3]]
-    part5 = WT_SEQUENCE[MUTATION_POSITIONS[3] + 1 :]
+def prepare_sequences(variants, wt_sequence, mutation_positions):
+    part1 = wt_sequence[: mutation_positions[0]]
+    part2 = wt_sequence[mutation_positions[0] + 1 : mutation_positions[1]]
+    part3 = wt_sequence[mutation_positions[1] + 1 : mutation_positions[2]]
+    part4 = wt_sequence[mutation_positions[2] + 1 : mutation_positions[3]]
+    part5 = wt_sequence[mutation_positions[3] + 1 :]
 
     sequences = []
     for variant in variants:
