@@ -35,15 +35,16 @@ tm.load_state_dict(torch.load("fp_model.pt"))
 
 
 
-results = Vector{Float64}(undef, 5000)
-screened = Vector{Int}(undef, 5000)
-for i = 1:50
-    d = load(joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_$(i*100).jld2"))
-    results[1+(i-1)*100:i*100] = d["results"]
-    screened[1+(i-1)*100:i*100] = d["screened"]
+results = Vector{Float64}(undef, 22000)
+screened = Vector{Int}(undef, 22000)
+save_period = 500
+for i = 1:44
+    d = load(joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_$(i*save_period).jld2"))
+    results[1+(i-1)*save_period:i*save_period] = d["results"]
+    screened[1+(i-1)*save_period:i*save_period] = d["screened"]
 end
 save(
-    joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_1-5000.jld2"),
+    joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_1-22000.jld2"),
     "results", results,
     "screened", screened,
 )
@@ -53,7 +54,18 @@ save(
 using PyCall
 pickle = pyimport("pickle")
 
-file_path = joinpath(@__DIR__, "data", "neighborhood_de", "results_distmax_1-5000.pkl")
+file_path = joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_1-22000.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
-    pickle.dump([results, screened], f)
+    pickle.dump([
+            results,
+            screened
+        ], f)
+end
+
+file_path = joinpath(@__DIR__, "data", "neighborhood_de", "history_esm1b_NDYP.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([
+            map(v -> join(extract_residues(v.sequence)), sequence_space.variants),
+            map(v -> join(extract_residues(v.sequence)), history)
+        ], f)
 end
