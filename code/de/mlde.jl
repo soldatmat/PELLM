@@ -34,21 +34,16 @@ missing_fitness_value = 0.0
 
 alphabet = DESilico.alphabet.protein
 wt_sequence = collect(wt_string)
+sequences = _get_sequences(data_path, "esm-1b_variants.csv", wt_string, mutation_positions)
+sequences_complete = _get_sequences(data_path, "esm-1b_variants_complete.csv", wt_string, mutation_positions)
+fitness = _get_fitness(data_path, "esm-1b_fitness_norm.csv")
+
 seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
 sequence_embeddings = CSV.read(joinpath(data_path, seq_embedding_csv_file), DataFrame)
 sequence_embeddings = [collect(values(row)) for row in eachrow(sequence_embeddings)]
 
-function _get_sequences(csv_file::String)
-    variants = CSV.read(joinpath(data_path, csv_file), DataFrame)
-    variants = [collect(values(row)[1]) for row in eachrow(variants)]
-    map(v -> collect(wt_string[1:mutation_positions[1]-1] * v[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * v[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * v[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * v[4] * wt_string[mutation_positions[4]+1:end]), variants)
-end
-sequences = _get_sequences("esm-1b_variants.csv")
-sequences_complete = _get_sequences("esm-1b_variants_complete.csv")
-
-fitness_csv_file = "esm-1b_fitness_norm.csv"
-fitness = CSV.read(joinpath(data_path, fitness_csv_file), DataFrame)
-fitness = [values(row)[1] for row in eachrow(fitness)]
+# ___ Mutagenesis ___
+mutagenesis = NoMutagenesis()
 
 # ___ Screening ___
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
@@ -58,9 +53,6 @@ embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequenc
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
 selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=1, repeat=false)
-
-# ___ Mutagenesis ___
-mutagenesis = NoMutagenesis()
 
 # ___ Run de! ___
 wt_variant = Variant(wt_sequence, screening(wt_sequence))
