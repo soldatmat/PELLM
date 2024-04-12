@@ -73,8 +73,8 @@ neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", neighborhoods_f
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
 # ___ Change starting variant ___
-#starting_mutant = "HECA" # bad: "DAKQ", good: "SRCG" "HECA"
-#wt_sequence = collect(wt_string[1:mutation_positions[1]-1] * starting_mutant[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * starting_mutant[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * starting_mutant[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * starting_mutant[4] * wt_string[mutation_positions[4]+1:end])
+starting_mutant = "HECA" # bad: "DAKQ", good: "SRCG" "HECA"
+wt_sequence = collect(wt_string[1:mutation_positions[1]-1] * starting_mutant[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * starting_mutant[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * starting_mutant[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * starting_mutant[4] * wt_string[mutation_positions[4]+1:end])
 
 # ___ Run de! ___
 wt_variant = Variant(wt_sequence, screening(wt_sequence))
@@ -103,8 +103,8 @@ neighborhood_search = NeighborhoodSearch(
 )
 
 #library_select = LibrarySelect(1, starting_variants)
-#library_select = LibrarySelect(1, Vector{Variant}([]))
-library_select = SamplingLibrarySelect(1, starting_variants, distance_maximizer, screening, sequence_space)
+library_select = LibrarySelect(1, Vector{Variant}([]))
+#library_select = SamplingLibrarySelect(1, starting_variants, distance_maximizer, screening, sequence_space)
 #library_select = RepeatingLibrarySelect()
 
 #= parent_sequence = library_select()[1]
@@ -124,15 +124,3 @@ de!(
 # 22 (430) for knn=32 to get 1.0 fitness
 println(sequence_space.top_variant)
 length(sequence_space.variants)
-
-# ___ Plot results ___
-using Plots
-histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0.0, 1.01, length=20))
-
-history = Vector{Variant}([sequence_space.variants[1]])
-map(v -> push!(history, v.fitness > history[end].fitness ? v : history[end]), sequence_space.variants[2:end])
-plot(0:length(history)-1, map(v -> v.fitness, history), ylim=(0.0, 1.0))
-
-extract_residues(sequence::Vector{Char}) = sequence[mutation_positions]
-residues = map(v -> join(extract_residues(v.sequence)), sequence_space.variants)
-residues_top = map(v -> join(extract_residues(v.sequence)), history)

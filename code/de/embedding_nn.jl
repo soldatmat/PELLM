@@ -26,10 +26,10 @@ end
 EmbeddingNN(embedding_extractor, model; device=default_torch_device()) = EmbeddingNN(embedding_extractor, model, device)
 
 function (fp::EmbeddingNN)(sequences::AbstractVector{Vector{Char}})
-    println("EmbeddingNN predict: Extracting sequence embeddings with $(typeof(fp.embedding_extractor))...")
+    println("EmbeddingNN predict: Extracting sequence embeddings with $(typeof(fp.embedding_extractor)) ...")
     embeddings = fp.embedding_extractor(sequences)
     embeddings = _ensure_model_dtype(fp.model, ensure_tensor(embeddings))
-    println("EmbeddingNN predict: Predicting fitness with $(t=pybuiltin("type")(fitness_predictor.model))...")
+    println("EmbeddingNN predict: Predicting fitness with $(t=pybuiltin("type")(fitness_predictor.model)) ...")
     fp.model.eval()
     torch.set_grad_enabled(false)
     predictions = fp.model(embeddings.to(fp.device))
@@ -40,9 +40,9 @@ function (fp::EmbeddingNN)(sequences::AbstractVector{Vector{Char}})
 end
 
 function train!(fp::EmbeddingNN, variants::AbstractVector{Variant})
-    println("EmbeddingNN train: Extracting sequence embeddings with $(typeof(fp.embedding_extractor))...")
+    println("EmbeddingNN train: Extracting sequence embeddings with $(typeof(fp.embedding_extractor)) ...")
     embeddings = fp.embedding_extractor([v.sequence for v in variants])
-    println("EmbeddingNN train: Training...")
+    println("EmbeddingNN train: Training ...")
     embeddings = _ensure_model_dtype(fp.model, ensure_tensor(embeddings))
     fitness_values = [v.fitness for v in variants]
     fitness_values = _ensure_model_dtype(fp.model, ensure_tensor(fitness_values))

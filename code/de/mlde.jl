@@ -17,15 +17,23 @@ include("no_mutagenesis.jl")
 
 GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
-# Data specific parameters:
-alphabet = DESilico.alphabet.protein
-data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+# ___ Data specific parameters ___
+# GB1
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 xlxs_file = "elife-16965-supp1.xlsx"
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
-wt_sequence = collect(wt_string)
 mutation_positions = [39, 40, 41, 54]
+missing_fitness_value = 0.0 =#
+
+# PhoQ
+data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+xlsx_file = "PhoQ.xlsx"
+wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
+mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
 
+alphabet = DESilico.alphabet.protein
+wt_sequence = collect(wt_string)
 seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
 sequence_embeddings = CSV.read(joinpath(data_path, seq_embedding_csv_file), DataFrame)
 sequence_embeddings = [collect(values(row)) for row in eachrow(sequence_embeddings)]
@@ -65,7 +73,4 @@ de!(
     n_iterations=348,
 )
 println(sequence_space.top_variant)
-
-# ___ Plot results ___
-using Plots
-histogram(map(v -> v.fitness, [v for v in sequence_space.variants]), bins=range(0, 1, length=20))
+length(sequence_space.variants)
