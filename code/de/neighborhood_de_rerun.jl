@@ -41,20 +41,26 @@ fitness = [values(row)[1] for row in eachrow(fitness)]
 #neighborhoods = _construct_neighborhoods(sequence_embeddings)
 neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", "phoq_esm1b_euclidean.jld2"))["neighborhoods"]
 
+# ___ Select starting variants ___
+#run_starts = variants_complete
+run_starts = load(joinpath(data_path, "sample_1000.jld2"))["variants"]
+
+save_period = 100
+
 # ___ Screening ___
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
-results = Vector{Float64}(undef, length(variants_complete))
-screened = Vector{Int}(undef, length(variants_complete))
-save_period = 500
-for (v, variant) in enumerate(variants_complete)
+results = Vector{Float64}(undef, length(run_starts))
+screened = Vector{Int}(undef, length(run_starts))
+history = Vector{Vector{Variant}}(undef, length(run_starts))
+for (v, variant) in enumerate(run_starts)
     # ___ Change starting sequence ___
-    starting_sequence = _construct_sequence(variant)
+    starting_sequence = _construct_sequence(variant, wt_string, mutation_positions)
 
     # ___ First de! ___
     wt_variant = Variant(starting_sequence, screening(starting_sequence))
-    sequence_space = SequenceSpace([wt_variant])
-    #= distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings)
+    sequence_space = SequenceSpace{Vector{Variant}}([wt_variant])
+    distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings)
     cumulative_select = CumulativeSelect(sequence_space.population)
     de!(
         sequence_space;
@@ -62,21 +68,23 @@ for (v, variant) in enumerate(variants_complete)
         selection_strategy=cumulative_select,
         mutagenesis=distance_maximizer,
         n_iterations=9,
-    ) =#
+    )
 
     # ___ Second de! ___
+    init_sequences = collect(sequence_space.variants)
     knn = 16
     neighborhood_search = NeighborhoodSearch(
         sequences_complete,
         neighborhoods[1:knn, :];
         repeat=false,
-        screened=map(variant -> variant.sequence, collect(sequence_space.variants)),
+        screened=map(variant -> variant.sequence, init_sequences),
     )
-    #= library_select = LibrarySelect(1, sequence_space.variants)
+    #library_select = LibrarySelect(1, Vector{Variant}([]))
+    library_select = LibrarySelect(1, init_sequences)
     parent_sequence = library_select()[1]
-    sequence_space = SequenceSpace([Variant(parent_sequence, screening(parent_sequence))])
-    DESilico.push_variants!(sequence_space, collect(library_select.library)) =#
-    library_select = LibrarySelect(1, Vector{Variant}([]))
+    sequence_space = SequenceSpace{Vector{Variant}}([Variant(parent_sequence, screening(parent_sequence))])
+    filter!(s -> s != parent_sequence, init_sequences)
+    DESilico.push_variants!(sequence_space, init_sequences)
     de!(
         sequence_space;
         screening,
@@ -89,14 +97,16 @@ for (v, variant) in enumerate(variants_complete)
     # ___ Save results ___
     results[v] = sequence_space.top_variant.fitness
     screened[v] = length(sequence_space.variants)
+    history[v] = copy(sequence_space.variants)
 
     # ___ Save data ___
     if v % save_period == 0
-        println("$(v)/$(length(variants_complete))")
+        println("$(v)/$(length(run_starts))")
         save(
             joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_$(v).jld2"),
             "results", results[v-save_period+1:v],
             "screened", screened[v-save_period+1:v],
+            "history", history[v-save_period+1:v],
         )
     end
 end
@@ -105,4 +115,5 @@ save(
     joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_complete.jld2"),
     "results", results,
     "screened", screened,
+    "history", history,
 )

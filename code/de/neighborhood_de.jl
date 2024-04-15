@@ -14,30 +14,30 @@ include("centrality_maximizer.jl")
 
 # ___ Data specific parameters ___
 # GB1
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
 missing_fitness_value = 0.0
-neighborhoods_filename = "gb1_esm1b_euclidean.jld2" =#
+neighborhoods_filename = "gb1_esm1b_euclidean.jld2"
 
 # PhoQ
-data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
-neighborhoods_filename = "phoq_esm1b_euclidean.jld2"
+neighborhoods_filename = "phoq_esm1b_euclidean.jld2" =#
 
 wt_sequence = collect(wt_string)
 sequences = _get_sequences(data_path, "esm-1b_variants.csv", wt_string, mutation_positions)
 sequences_complete = _get_sequences(data_path, "esm-1b_variants_complete.csv", wt_string, mutation_positions)
 fitness = _get_fitness(data_path, "esm-1b_fitness_norm.csv")
 
-seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
+#= seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
 sequence_embeddings = CSV.read(joinpath(data_path, seq_embedding_csv_file), DataFrame)
 sequence_embeddings = Matrix{Float64}(sequence_embeddings)
 sequence_embeddings = transpose(sequence_embeddings)
+neighborhoods = _construct_neighborhoods(sequence_embeddings) =#
 
-#neighborhoods = _construct_neighborhoods(sequence_embeddings)
 neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", neighborhoods_filename))["neighborhoods"]
 
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
@@ -51,14 +51,14 @@ wt_variant = Variant(wt_sequence, screening(wt_sequence))
 sequence_space = SequenceSpace{Vector{Variant}}([wt_variant])
 
 distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings)
-#= cumulative_select = CumulativeSelect(sequence_space.population)
+cumulative_select = CumulativeSelect(sequence_space.population)
 de!(
     sequence_space;
     screening,
     selection_strategy=cumulative_select,
     mutagenesis=distance_maximizer,
     n_iterations=9,
-) =#
+)
 starting_variants = sequence_space.variants
 
 #starting_variants = map(i -> Variant(sequences_complete[i], screening(sequences_complete[i])), get_top_centrality(neighborhoods, 10))
@@ -72,21 +72,21 @@ neighborhood_search = NeighborhoodSearch(
     #n=1,
 )
 
-#library_select = LibrarySelect(1, starting_variants)
-library_select = LibrarySelect(1, Vector{Variant}([]))
+library_select = LibrarySelect(1, starting_variants)
+#library_select = LibrarySelect(1, Vector{Variant}([]))
 #library_select = SamplingLibrarySelect(1, starting_variants, distance_maximizer, screening, sequence_space)
 #library_select = RepeatingLibrarySelect()
 
-#= parent_sequence = library_select()[1]
+parent_sequence = library_select()[1]
 sequence_space = SequenceSpace{Vector{Variant}}([Variant(parent_sequence, screening(parent_sequence))])
-DESilico.push_variants!(sequence_space, collect(library_select.library)) =#
+DESilico.push_variants!(sequence_space, collect(library_select.library))
 de!(
     sequence_space;
     screening,
     selection_strategy=library_select,
     mutagenesis=neighborhood_search,
     n_iterations=nothing,
-    screening_budget=384,
+    screening_budget=190,
 )
 
 # 23 (239) for knn=16 to get 1.0 fitness, (RepeatingLibrarySelect + n=1 in n.s.) => (230)
