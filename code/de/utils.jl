@@ -29,3 +29,8 @@ function _get_fitness(data_path::String, csv_file::String)
     fitness = CSV.read(joinpath(data_path, csv_file), DataFrame)
     fitness = [values(row)[1] for row in eachrow(fitness)]
 end
+
+function _get_sequence_emebeddings(data_path::String, csv_file::String)
+    sequence_embeddings = CSV.read(joinpath(data_path, csv_file), DataFrame)
+    sequence_embeddings = [collect(values(row)) for row in eachrow(sequence_embeddings)]
+end
