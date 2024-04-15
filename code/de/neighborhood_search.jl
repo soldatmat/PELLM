@@ -1,5 +1,8 @@
 using StatsBase
 
+include("types.jl")
+include("utils.jl")
+
 """
 TODO
 """
@@ -49,3 +52,39 @@ function _sample_new_sequences(m::NeighborhoodSearch)
     println("Out of neighbors. Sampled $(mutants[1][mutation_positions]) $(screening([mutants[1]])).")
     return mutants
 end
+
+
+
+struct NeighborhoodSearchWithPredictor <: DESilico.Mutagenesis
+    sequences::Vector{Vector{Char}}
+    neighborhoods::Array{Int}
+    repeat::Bool
+    screened::Union{Dict{Vector{Char},Bool},Nothing}
+    predictor::FitnessPredictor
+
+    function NeighborhoodSearchWithPredictor(sequences::Vector{Vector{Char}}, neighborhoods::Array{Int}, repeat::Bool, screened::Union{Dict{Vector{Char},Bool},Nothing}, predictor::FitnessPredictor)
+        repeat || @assert !isnothing(screened)
+        new(sequences, neighborhoods, repeat, repeat ? nothing : screened, predictor)
+    end
+end
+
+function NeighborhoodSearchWithPredictor(sequences, neighborhoods; repeat::Bool=false, screened::AbstractVector{Vector{Char}}=Vector{Vector{Char}}([]), predictor::FitnessPredictor)
+    screened_dict = Dict(sequences .=> false)
+    map(sequence -> screened_dict[sequence] = true, screened)
+    NeighborhoodSearchWithPredictor(sequences, neighborhoods, repeat, screened_dict, predictor)
+end
+
+function (m::NeighborhoodSearchWithPredictor)(parents::AbstractVector{Vector{Char}})
+    parent_indexes = map(parent -> findfirst(item -> item == parent, m.sequences), parents)
+    mutant_indexes = mapreduce(p -> m.neighborhoods[:, p], vcat, parent_indexes)
+    mutants = map(i -> m.sequences[i], mutant_indexes)
+    if !m.repeat
+        mutants = _filter_screened(mutants, m.screened)
+    end
+    predictions = tensor_to_matrix(m.predictor(mutants))
+    mutants = [mutants[findmax(predictions)[2]]]
+    m.repeat || _update_screened!(m, mutants)
+    return mutants
+end
+
+_update_screened!(m::NeighborhoodSearchWithPredictor, sequences::AbstractVector{Vector{Char}}) = map(sequence -> m.screened[sequence] = true, sequences)
