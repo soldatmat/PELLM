@@ -13,16 +13,16 @@ include("neighborhood_search.jl")
 
 # ___ Data specific parameters ___
 # GB1
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
-missing_fitness_value = 0.0 =#
+missing_fitness_value = 0.0
 
 # PhoQ
-data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
-missing_fitness_value = 0.0
+missing_fitness_value = 0.0 =#
 
 wt_sequence = collect(wt_string)
 seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
@@ -30,17 +30,9 @@ sequence_embeddings = CSV.read(joinpath(data_path, seq_embedding_csv_file), Data
 sequence_embeddings = Matrix{Float64}(sequence_embeddings)
 sequence_embeddings = transpose(sequence_embeddings)
 
-function _get_variants(csv_file::String)
-    variants = CSV.read(joinpath(data_path, csv_file), DataFrame)
-    [collect(values(row)[1]) for row in eachrow(variants)]
-end
-_construct_sequence(variant::Vector{Char}) = collect(wt_string[1:mutation_positions[1]-1] * variant[1] * wt_string[mutation_positions[1]+1:mutation_positions[2]-1] * variant[2] * wt_string[mutation_positions[2]+1:mutation_positions[3]-1] * variant[3] * wt_string[mutation_positions[3]+1:mutation_positions[4]-1] * variant[4] * wt_string[mutation_positions[4]+1:end])
-_construct_sequences(variants::AbstractVector{Vector{Char}}) = map(v -> _construct_sequence(v), variants)
-_get_sequences(csv_file::String) = _construct_sequences(_get_variants(csv_file))
-
-sequences = _get_sequences("esm-1b_variants.csv")
-variants_complete = _get_variants("esm-1b_variants_complete.csv")
-sequences_complete = _construct_sequences(variants_complete)
+sequences = _get_sequences(data_path, "esm-1b_variants.csv", wt_string, mutation_positions)
+variants_complete = _get_variants(data_path, "esm-1b_variants_complete.csv")
+sequences_complete = _construct_sequences(variants_complete, wt_string, mutation_positions)
 
 fitness_csv_file = "esm-1b_fitness_norm.csv"
 fitness = CSV.read(joinpath(data_path, fitness_csv_file), DataFrame)
