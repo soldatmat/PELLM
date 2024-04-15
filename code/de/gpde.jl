@@ -84,9 +84,14 @@ bo!(problem;
     model_fitter,
     acq_maximizer=DEAcqMaximizer(variant_coords),
     acquisition=ExpectedImprovement(),
-    term_cond=IterLimit(284),
+    term_cond=IterLimit(43),
     options=BossOptions(;
         info=true,
         debug=false,
     ),
+)
+
+save(
+    joinpath(@__DIR__, "data", "gpde", "gp_190.jld2"),
+    "problem", problem,
 )
