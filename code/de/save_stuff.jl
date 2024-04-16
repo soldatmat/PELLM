@@ -49,16 +49,24 @@ save(
     "screened", screened,
 )
 
+d = load(joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "with_history", "results_sample_1000.jld2"))
+results = d["results"]
+screened = d["screened"]
+history = d["history"]
+top_variants = map(h_vector -> map(variant -> variant.sequence, h_vector), history)
+top_fitnesses = map(h_vector -> map(variant -> variant.fitness, h_vector), history)
 
 # ___ Python ___
 using PyCall
 pickle = pyimport("pickle")
 
-file_path = joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_1-22000.pkl")
+file_path = joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "with_history", "results_sample_1000.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             results,
-            screened
+            screened,
+            #top_variants,
+            #top_fitnesses
         ], f)
 end
 

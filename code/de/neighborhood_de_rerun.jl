@@ -13,16 +13,16 @@ include("neighborhood_search.jl")
 
 # ___ Data specific parameters ___
 # GB1
-data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
-missing_fitness_value = 0.0
+missing_fitness_value = 0.0 =#
 
 # PhoQ
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
-missing_fitness_value = 0.0 =#
+missing_fitness_value = 0.0
 
 wt_sequence = collect(wt_string)
 seq_embedding_csv_file = "esm-1b_embedding_complete.csv"
@@ -103,7 +103,7 @@ for (v, variant) in enumerate(run_starts)
     if v % save_period == 0
         println("$(v)/$(length(run_starts))")
         save(
-            joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_$(v).jld2"),
+            joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "with_history", "results_$(v).jld2"),
             "results", results[v-save_period+1:v],
             "screened", screened[v-save_period+1:v],
             "history", history[v-save_period+1:v],
@@ -112,7 +112,7 @@ for (v, variant) in enumerate(run_starts)
 end
 
 save(
-    joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "results_complete.jld2"),
+    joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "with_history", "results_complete.jld2"),
     "results", results,
     "screened", screened,
     "history", history,
