@@ -32,7 +32,17 @@ histogram(fitness[1:1000])
 histogram(map(pair -> pair[2], selection))
 
 save(
-    joinpath(data_path, "sample_1000.jld2"),
+    joinpath(data_path, "sample_1000_02.jld2"),
     "variants", map(pair -> pair[1], selection),
     "fitness", map(pair -> pair[2], selection),
 )
+
+
+
+variants_complete = _get_variants(data_path, "esm-1b_variants_complete.csv")
+sequences_complete = _construct_sequences(variants_complete, wt_string, mutation_positions)
+sequences = _construct_sequences(variants, wt_string, mutation_positions)
+screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
+
+f = map(s -> screening(s), sequences_complete[1:5000])
+histogram(f)

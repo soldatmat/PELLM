@@ -34,3 +34,12 @@ function _get_sequence_emebeddings(data_path::String, csv_file::String)
     sequence_embeddings = CSV.read(joinpath(data_path, csv_file), DataFrame)
     sequence_embeddings = [collect(values(row)) for row in eachrow(sequence_embeddings)]
 end
+
+extract_residues(sequence::AbstractVector{Char}, mutation_posisitions::AbstractVector{Int}) = map(pos -> sequence[pos], mutation_posisitions)
+
+function reconstruct_history(variants::AbstractVector{Variant})
+    top_variant = Vector{Variant}(undef, length(variants))
+    top_variant[1] = variants[1]
+    map(i -> variants[i].fitness > top_variant[i-1].fitness ? top_variant[i] = variants[i] : top_variant[i] = top_variant[i-1], 2:length(variants))
+    return top_variant
+end
