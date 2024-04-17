@@ -15,7 +15,7 @@ end
 function (m::DistanceMaximizer)(parents::AbstractVector{Vector{Char}})
     parent_indexes = map(parent -> findfirst(item -> item == parent, m.sequences), parents)
     distances = pairwise(euclidean, m.embeddings, m.embeddings[:, parent_indexes])
-    min_distances = [minimum(row) for row in eachrow(distances)]
+    min_distances = map(row -> minimum(row), eachrow(distances))
     mutant_index = findmax(min_distances)[2] # TODO sample with probability derived from `min_distances`
     return [m.sequences[mutant_index]]
 end
