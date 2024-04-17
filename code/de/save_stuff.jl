@@ -1,3 +1,5 @@
+include("utils.jl")
+
 using Serialization
 
 serialize("test.txt", sequence_space)
@@ -53,27 +55,32 @@ d = load(joinpath(@__DIR__, "data", "neighborhood_de", "with_history", "results_
 results = d["results"]
 screened = d["screened"]
 history = d["history"]
-top_variants = map(h_vector -> map(variant -> variant.sequence, h_vector), history)
-top_fitnesses = map(h_vector -> map(variant -> variant.fitness, h_vector), history)
+top_variants = map(h -> reconstruct_history(h), history)
+top_sequences = map(h_vector -> map(variant -> variant.sequence, h_vector), top_variants)
+top_fitnesses = map(h_vector -> map(variant -> variant.fitness, h_vector), top_variants)
 
 # ___ Python ___
 using PyCall
 pickle = pyimport("pickle")
 
-file_path = joinpath(@__DIR__, "data", "neighborhood_de", "with_history", "results_sample_1000_02.pkl")
+file_path = joinpath(@__DIR__, "data", "neighborhood_de", "with_history", "results_sample_1000_02_fitness_progressions.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
-            results,
-            screened,
+            #results,
+            #screened,
             #top_variants,
-            #top_fitnesses
+            top_fitnesses
         ], f)
 end
 
 file_path = joinpath(@__DIR__, "data", "neighborhood_de", "history_esm1b_NDYP.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
-            map(v -> join(extract_residues(v.sequence)), sequence_space.variants),
-            map(v -> join(extract_residues(v.sequence)), history)
+            map(v -> join(extract_residues(v.sequence, mutation_positions)), sequence_space.variants),
+            map(v -> join(extract_residues(v.sequence, mutation_positions)), history)
         ], f)
 end
+
+# ___ MLDE ___
+d = load(joinpath(@__DIR__, "data", "mlde_384_02", "de.jld2"))
+keys(d)
