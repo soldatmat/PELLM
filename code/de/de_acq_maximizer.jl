@@ -16,5 +16,5 @@ function BOSS.maximize_acquisition(acq_maximizer::DEAcqMaximizer, acquisition::B
     map(x -> variants[acq_maximizer.variant_index[x]] = 0.0, eachcol(problem.data.X))
     sort!(variants, by=x -> x[2], rev=true)
     return variants[1][1]
-    # for batch, retunr matrix, columns are data points
+    # for batch: return matrix where columns are data points
 end
