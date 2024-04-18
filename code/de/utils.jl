@@ -43,3 +43,9 @@ function reconstruct_history(variants::AbstractVector{Variant})
     map(i -> variants[i].fitness > top_variant[i-1].fitness ? top_variant[i] = variants[i] : top_variant[i] = top_variant[i-1], 2:length(variants))
     return top_variant
 end
+function reconstruct_history(fitness::AbstractVector{T}) where {T <: Real}
+    top_fitness = Vector{T}(undef, length(fitness))
+    top_fitness[1] = fitness[1]
+    map(i -> fitness[i] > top_fitness[i-1] ? top_fitness[i] = fitness[i] : top_fitness[i] = top_fitness[i-1], 2:length(fitness))
+    return top_fitness
+end

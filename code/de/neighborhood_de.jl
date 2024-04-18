@@ -53,13 +53,13 @@ sequence_embeddings_a = transpose(sequence_embeddings_a)
 neighborhoods = load(joinpath(@__DIR__, "data", "neighborhoods", neighborhoods_filename))["neighborhoods"]
 
 # ___ Fitness Predictor ___
-embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequence_embeddings))
+#= embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequence_embeddings))
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
-fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
+fitness_predictor = EmbeddingNN(embedding_extractor, fp_model) =#
 
 # ___ Screening ___
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
-training_screening = TrainingScreening(screening, (variants) -> train!(fitness_predictor, variants))
+#training_screening = TrainingScreening(screening, (variants) -> train!(fitness_predictor, variants))
 
 # ___ Change starting variant ___
 #starting_mutant = "HECA" # bad: "DAKQ", good: "SRCG" "HECA"
@@ -73,7 +73,7 @@ distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings_a
 cumulative_select = CumulativeSelect(sequence_space.population)
 de!(
     sequence_space;
-    screening=training_screening,
+    screening=screening, #training_screening,
     selection_strategy=cumulative_select,
     mutagenesis=distance_maximizer,
     n_iterations=9,
@@ -83,20 +83,20 @@ starting_variants = sequence_space.variants
 #starting_variants = map(i -> Variant(sequences_complete[i], screening(sequences_complete[i])), get_top_centrality(neighborhoods, 10))
 
 knn = 16
-#= neighborhood_search = NeighborhoodSearch(
+neighborhood_search = NeighborhoodSearch(
     sequences_complete,
     neighborhoods[1:knn, :];
     repeat=false,
     screened=map(variant -> variant.sequence, collect(starting_variants)),
     #n=1,
-) =#
-neighborhood_search = NeighborhoodSearchWithPredictor(
+)
+#= neighborhood_search = NeighborhoodSearchWithPredictor(
     sequences_complete,
     neighborhoods[1:knn, :];
     repeat=false,
     screened=map(variant -> variant.sequence, collect(starting_variants)),
     predictor=fitness_predictor,
-)
+) =#
 
 library_select = LibrarySelect(1, starting_variants)
 #library_select = LibrarySelect(1, Vector{Variant}([]))
@@ -108,7 +108,7 @@ sequence_space = SequenceSpace{Vector{Variant}}([Variant(parent_sequence, screen
 DESilico.push_variants!(sequence_space, collect(library_select.library))
 de!(
     sequence_space;
-    screening=training_screening,
+    screening=screening, #training_screening,
     selection_strategy=library_select,
     mutagenesis=neighborhood_search,
     n_iterations=nothing,
@@ -120,3 +120,6 @@ de!(
 # 22 (430) for knn=32 to get 1.0 fitness
 println(sequence_space.top_variant)
 length(Set(sequence_space.variants))
+
+history = reconstruct_history(sequence_space.variants)
+fitness_progression = map(v -> v.fitness, history)

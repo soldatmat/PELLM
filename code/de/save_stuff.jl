@@ -82,5 +82,25 @@ file_path = joinpath(@__DIR__, "data", "neighborhood_de", "history_esm1b_NDYP.pk
 end
 
 # ___ MLDE ___
-d = load(joinpath(@__DIR__, "data", "mlde_384_02", "de.jld2"))
-keys(d)
+d = load(joinpath(@__DIR__, "data", "mlde_output_distmax_01", "history.jld2"))
+sequence_space = d["sequence_space"]
+selection_strategy = d["selection_strategy"]
+mutagenesis = d["mutagenesis"]
+
+file_path = joinpath(@__DIR__, "data", "mlde_output_distmax_01", "fitness_progression.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([
+            d["top_fitness"]
+        ], f)
+end
+
+
+# ___ GPDE ___
+d = load(joinpath(@__DIR__, "data", "gpde", "gp_190.jld2"))
+
+file_path = joinpath(@__DIR__, "data", "gpde", "gp_190_fitness_progression.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([
+            h
+        ], f)
+end
