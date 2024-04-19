@@ -96,14 +96,14 @@ end
 
 
 # ___ GPDE ___
-d = load(joinpath(@__DIR__, "data", "gpde", "gp_190_no_repeats.jld2"))
+d = load(joinpath(@__DIR__, "data", "gpde", "gp_280_no_repeats.jld2"))
 
 history = problem.data.Y
 fitness_progression = Vector{Float64}(undef, length(history))
 fitness_progression[1] = problem.data.Y[1]
 map(i -> fitness_progression[i] = history[i] > fitness_progression[i-1] ? history[i] : fitness_progression[i-1], 2:length(history))
 
-file_path = joinpath(@__DIR__, "data", "gpde", "gp_190_no_repeats_fitness_progression.pkl")
+file_path = joinpath(@__DIR__, "data", "gpde", "gp_280_no_repeats_fitness_progression.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             fitness_progression
