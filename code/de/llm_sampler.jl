@@ -48,7 +48,7 @@ LLMSampler(llm; sampling_sequence, alphabet, k) = LLMSampler(llm, sampling_seque
 # TODO implement pseudolikelihoods as an alternative
 # pseudolikelihoods = get_pseudolikelihoods(ae.llm, ae.masked_sequence, ae.mask_positions)
 function (ae::LLMSampler)(sequences::AbstractVector{Vector{Char}}, positions::AbstractVector{Int})
-    train!(ae.llm, sequences; mask_positions=positions) # TODO enable llm training
+    train!(ae.llm, sequences; mask_positions=positions)
     masks = _get_contextualized_mask_embeddings(ae, positions)
     symbols = _get_symbol_embeddings(ae)
     probabilities = _get_symbol_probability_distributions(ae, masks, symbols)
