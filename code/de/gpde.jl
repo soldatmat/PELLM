@@ -28,7 +28,8 @@ neighborhoods_filename = "phoq_esm1b_euclidean.jld2" =#
 wt_sequence = collect(wt_string)
 wt_variant = map(pos -> wt_sequence[pos], mutation_positions)
 alphabet = collect(DESilico.alphabet.protein)
-domain_encoder = Dict(alphabet .=> Float64.(eachindex(alphabet)))
+domain_encoder = Dict(alphabet .=> eachindex(alphabet))
+_encode_domain_float(variant::AbstractVector{Char}) = map(symbol -> Float64.(domain_encoder[symbol]), variant)
 _encode_domain(variant::AbstractVector{Char}) = map(symbol -> domain_encoder[symbol], variant)
 domain_decoder = Dict(eachindex(alphabet) .=> alphabet)
 _decode_domain(coords::AbstractVector{Int}) = map(coord -> domain_decoder[coord], coords)
@@ -62,7 +63,7 @@ model = EmbeddingGP(
     _extract_embedding,
 )
 
-data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain(wt_variant))), hcat([screening(wt_sequence)]))
+data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(wt_variant))), hcat([screening(wt_sequence)]))
 problem = BossProblem(;
     fitness=LinFitness([1]),
     f=x -> [screening(_construct_sequence(_decode_domain(x), wt_string, mutation_positions))],
@@ -84,7 +85,7 @@ bo!(problem;
     model_fitter,
     acq_maximizer=DEAcqMaximizer(variant_coords),
     acquisition=ExpectedImprovement(),
-    term_cond=IterLimit(43),
+    term_cond=IterLimit(194),
     options=BossOptions(;
         info=true,
         debug=false,
@@ -92,6 +93,6 @@ bo!(problem;
 )
 
 save(
-    joinpath(@__DIR__, "data", "gpde", "gp_190.jld2"),
+    joinpath(@__DIR__, "data", "gpde", "gp_384_no_repeats.jld2"),
     "problem", problem,
 )
