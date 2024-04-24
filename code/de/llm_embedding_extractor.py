@@ -7,9 +7,6 @@ import time
 
 
 def extract_embeddings(model, sequences, embedding_size, batch_size):
-    batch_size = 100
-    print(batch_size)
-    start = time.time()
     dataloader = DataLoader(SequenceDataset(sequences), batch_size=batch_size)
     model.eval()
     extracted_embeddings = torch.empty((len(sequences), embedding_size))
@@ -20,8 +17,6 @@ def extract_embeddings(model, sequences, embedding_size, batch_size):
                 1, 1, embeddings.size()[1] - 2
             ).mean(1)
             extracted_embeddings[b * batch_size : (b + 1) * batch_size, :] = (
-                sequence_embeddings
+                sequence_embeddings.cpu()
             )
-    extracted_embeddings = extracted_embeddings.cpu()
-    print(time.time() - start)
     return extracted_embeddings
