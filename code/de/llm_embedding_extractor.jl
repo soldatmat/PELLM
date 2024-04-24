@@ -2,6 +2,8 @@ using PyCall
 
 torch = pyimport("torch")
 
+llm_embedding_extractor = pyimport("llm_embedding_extractor")
+
 """
 Extracts sequence embeddings using a specified `LLM` (Large Language Model).
 
@@ -45,6 +47,10 @@ function (ee::LLMEmbeddingExtractor)(sequences::AbstractVector{Vector{Char}})
 
     torch.set_grad_enabled(true)
     return embedding
+end
+function (ee::LLMEmbeddingExtractor{ESM1b})(sequences::AbstractVector{Vector{Char}})
+    tokenized_sequences = tokenize(llm, sequences).to(llm.device)
+    llm_embedding_extractor.extract_embeddings(ee.llm.model, tokenized_sequences, ee.embedding_size, ee.batch_size)
 end
 
 function _get_batch_borders(n_sequences::Int, batch_size::Int)

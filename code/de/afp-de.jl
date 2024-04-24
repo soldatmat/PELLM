@@ -12,14 +12,15 @@ include("types.jl")
 include("llm.jl")
 include("utils.jl")
 include("embedding_nn.jl")
+include("esm1b.jl")
 include("llm_embedding_extractor.jl")
 include("dict_embedding_extractor.jl")
-include("esm1b.jl")
 include("top_k_predicted.jl")
 include("llm_sampler.jl")
 include("distance_maximizer.jl")
 include("cumulative_select.jl")
 include("prediction_distance_maximizer.jl")
+include("no_mutagenesis.jl")
 
 GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
@@ -72,7 +73,7 @@ de!(
 )
 
 # ___ Active Learning ___
-embedding_extractor = LLMEmbeddingExtractor(llm; return_tensor=true)
+embedding_extractor = LLMEmbeddingExtractor(llm; batch_size=100, return_tensor=true)
 #embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequence_embeddings))
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
