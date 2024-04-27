@@ -83,13 +83,14 @@ selection_strategy = PredictionDistanceMaximizer(fitness_predictor, sequences_co
 
 #alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
 #mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE
+mutagenesis=NoMutagenesis()
 
 sequence_space.population = selection_strategy(sequence_space.variants)
 de!(
     sequence_space;
     screening,
     selection_strategy,
-    mutagenesis=NoMutagenesis(),
+    mutagenesis,
     n_iterations=15,
 )
 println(sequence_space.top_variant)

@@ -4,4 +4,4 @@ source ~/.bashrc
 
 cd ~/master/code/de
 
-julia afp-de.jl
+julia run_script.jl
