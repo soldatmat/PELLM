@@ -42,12 +42,11 @@ end
 function train!(fp::EmbeddingNN, variants::AbstractVector{Variant})
     println("EmbeddingNN train: Extracting sequence embeddings with $(typeof(fp.embedding_extractor)) ...")
     embeddings = fp.embedding_extractor([v.sequence for v in variants])
-    println("EmbeddingNN train: Training ...")
+    println("EmbeddingNN train: Training model ...")
     embeddings = _ensure_model_dtype(fp.model, ensure_tensor(embeddings))
     fitness_values = [v.fitness for v in variants]
     fitness_values = _ensure_model_dtype(fp.model, ensure_tensor(fitness_values))
     embedding_nn.train(fp.model, embeddings, fitness_values, fp.device)
-    GC.gc() # GPU allocs by Python sometimes do not get freed automatically
     println("EmbeddingNN train: Finished.")
 end
 

@@ -18,6 +18,10 @@ include("llm_embedding_extractor.jl")
 include("dict_embedding_extractor.jl")
 include("top_k_predicted.jl")
 include("llm_sampler.jl")
+include("distance_maximizer.jl")
+include("cumulative_select.jl")
+include("prediction_distance_maximizer.jl")
+include("no_mutagenesis.jl")
 
 GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
@@ -56,25 +60,39 @@ mask_string = llm.alphabet.all_toks[llm.alphabet.mask_idx+1] # +1 for julia vs P
 #screening = DESilico.DictScreening(joinpath(data_path, xlxs_file), missing_fitness_value)
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
+# ___ Passive Sampling ___
+wt_variant = Variant(wt_sequence, screening(wt_sequence))
+sequence_space = SequenceSpace{Vector{Variant}}([wt_variant])
+distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings_a)
+cumulative_select = CumulativeSelect(sequence_space.population)
+de!(
+    sequence_space;
+    screening=screening,
+    selection_strategy=cumulative_select,
+    mutagenesis=distance_maximizer,
+    n_iterations=23,
+)
+
 # ___ Active Learning ___
 #embedding_extractor = LLMEmbeddingExtractor(llm; batch_size=100, return_tensor=true)
 embedding_extractor = DictEmbeddingExtractor(Dict(sequences_complete .=> sequence_embeddings))
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
 #selection_strategy = TopKPredicted(fitness_predictor, length(variants[1]), alphabet; k=8000)
-selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=8000) # AFP-DE k=8000 (! + 1000 other sequences)
+#selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=8000) # AFP-DE k=8000 (! + 1000 other sequences)
+selection_strategy = PredictionDistanceMaximizer(fitness_predictor, sequences_complete; screened=sequence_space.variants, k=24, repeat=false)
 
-alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
-mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE
+#alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
+#mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE
+mutagenesis=NoMutagenesis()
 
-wt_variant = Variant(wt_sequence, screening(wt_sequence))
-sequence_space = SequenceSpace{Vector{Variant}}([wt_variant])
+sequence_space.population = selection_strategy(sequence_space.variants)
 de!(
     sequence_space;
     screening,
     selection_strategy,
     mutagenesis,
-    n_iterations=16,
+    n_iterations=15,
 )
 println(sequence_space.top_variant)
 
@@ -83,7 +101,7 @@ history = reconstruct_history(sequence_space.variants)
 top_sequence = map(v -> v.sequence, history)
 top_variant = map(sequence -> extract_residues(sequence, mutation_positions), top_sequence)
 top_fitness = map(v -> v.fitness, history)
-save_path = joinpath(@__DIR__, "data", "afp-de_01")
+save_path = joinpath(@__DIR__, "data", "perceptron_distmax_02")
 save(
     joinpath(save_path, "de.jld2"),
     "sequence_space", sequence_space,

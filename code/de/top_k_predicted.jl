@@ -50,15 +50,7 @@ _update_screened!(ss::TopKPredicted, variants::AbstractVector{Variant}) = map(va
 
 function _select_top_k!(ss::TopKPredicted, variants::AbstractVector{Variant})
     sort!(variants, by=x -> x.fitness, rev=true)
-    selection = ss.repeat ? _select_first_k(ss, variants) : _select_first_k_without_repeats!(ss, variants)
-    return selection
-end
-
-function _select_first_k(ss::TopKPredicted, variants::AbstractVector{Variant})
-    selection = Vector{Vector{Char}}(undef, ss.k)
-    for (idx, variant) in enumerate(variants[1:ss.k])
-        selection[idx] = variant.sequence
-    end
+    selection = ss.repeat ? select_first_k(variants, ss.k) : _select_first_k_without_repeats!(ss, variants)
     return selection
 end
 

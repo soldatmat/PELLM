@@ -49,3 +49,15 @@ function reconstruct_history(fitness::AbstractVector{T}) where {T <: Real}
     map(i -> fitness[i] > top_fitness[i-1] ? top_fitness[i] = fitness[i] : top_fitness[i] = top_fitness[i-1], 2:length(fitness))
     return top_fitness
 end
+
+function select_top_k!(variants::AbstractVector{Variant}, k::Int)
+    sort!(variants, by=x -> x.fitness, rev=true)
+    _select_first_k(variants, k)
+end
+function select_first_k(variants::AbstractVector{Variant}, k::Int)
+    selection = Vector{Vector{Char}}(undef, k)
+    for (idx, variant) in enumerate(variants[1:k])
+        selection[idx] = variant.sequence
+    end
+    return selection
+end
