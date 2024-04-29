@@ -25,10 +25,9 @@ PredictionDistanceMaximizer(model, sequences; screened::AbstractVector{Variant}=
 PredictionDistanceMaximizer(model, sequence_length::Int, alphabet::Set{Char}; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=()->nothing) = PredictionDistanceMaximizer(model, recombine_symbols(sequence_length, alphabet), screened, k, repeat, train_callback)
 
 function (ss::PredictionDistanceMaximizer)(variants::AbstractVector{Variant})
-    ss.train_callback(ss) # TODO delete
     ss.repeat || _update_sequences!(ss, variants)
     train!(ss.model, variants)
-    #ss.train_callback(ss) # TODO uncomment
+    ss.train_callback(ss)
     prediction = ss.model(ss.sequences)
     predicted_variants = map((s, f) -> Variant(s, f), ss.sequences, prediction)
     _select_farthest_k(ss, predicted_variants)

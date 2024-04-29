@@ -79,16 +79,17 @@ embedding_extractor = LLMEmbeddingExtractor(llm; batch_size=100, return_tensor=t
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
 
+function train_llm(ss::PredictionDistanceMaximizer)
+    println("Finetuning LLM ...")
+    prediction = fitness_predictor(ss.sequences)
+    predicted_variants = map((s, f) -> Variant(s, f), ss.sequences, prediction)
+    selected_sequences = select_top_k!(predicted_variants, ss.k)
+    train!(llm, selected_sequences; mask_positions=mutation_posisitions)
+end
+
 #selection_strategy = TopKPredicted(fitness_predictor, length(variants[1]), alphabet; k=8000)
 #selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=8000) # AFP-DE k=8000 (! + 1000 other sequences)
 selection_strategy = PredictionDistanceMaximizer(fitness_predictor, sequences_complete; screened=sequence_space.variants, k=24, repeat=false, train_callback=train_llm)
-function train_llm()
-    println("Finetuning LLM ...")
-    prediction = fitness_predictor(selection_strategy.sequences)
-    predicted_variants = map((s, f) -> Variant(s, f), selection_strategy.sequences, prediction)
-    selected_sequences = select_top_k!(selection_strategy, predicted_variants)
-    train!(llm, selected_sequences; mask_positions=mutation_posisitions)
-end
 
 #alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
 #mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE

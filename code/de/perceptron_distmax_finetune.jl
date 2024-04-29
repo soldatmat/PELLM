@@ -83,7 +83,7 @@ function train_llm(ss::PredictionDistanceMaximizer)
     println("Finetuning LLM ...")
     prediction = fitness_predictor(ss.sequences)
     predicted_variants = map((s, f) -> Variant(s, f), ss.sequences, prediction)
-    selected_sequences = select_top_k!(ss, predicted_variants)
+    selected_sequences = select_top_k!(predicted_variants, ss.k)
     train!(llm, selected_sequences; mask_positions=mutation_posisitions)
 end
 
