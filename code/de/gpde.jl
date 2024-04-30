@@ -1,3 +1,6 @@
+using Dates
+time = now()
+
 using CSV
 using DataFrames
 using FileIO
@@ -11,18 +14,18 @@ include("de_acq_maximizer.jl")
 
 # ___ Data specific parameters ___
 # GB1
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
 missing_fitness_value = 0.0
-neighborhoods_filename = "gb1_esm1b_euclidean.jld2" =#
+neighborhoods_filename = "gb1_esm1b_euclidean.jld2"
 
 # PhoQ
-data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
-neighborhoods_filename = "phoq_esm1b_euclidean.jld2"
+neighborhoods_filename = "phoq_esm1b_euclidean.jld2" =#
 
 # ___ Load data ___
 wt_sequence = collect(wt_string)
@@ -76,23 +79,26 @@ problem = BossProblem(;
 model_fitter = BOSS.OptimizationMLE(;
     algorithm=NEWUOA(),
     multistart=20,
-    parallel=true,
+    parallel=false,
     rhoend=1e-4,
 )
+println("===> TIME OF INIT: $(now() - time)")
 
 # ___ Run GP ___
+time = now()
 bo!(problem;
     model_fitter,
     acq_maximizer=DEAcqMaximizer(variant_coords),
     acquisition=ExpectedImprovement(),
-    term_cond=IterLimit(284),
+    term_cond=IterLimit(199),
     options=BossOptions(;
         info=true,
         debug=false,
     ),
 )
+println("===> TIME OF GP: $(now() - time)")
 
 save(
-    joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats.jld2"),
+    joinpath(@__DIR__, "data", "gpde", "GB1", "01", "gp.jld2"),
     "problem", problem,
 )

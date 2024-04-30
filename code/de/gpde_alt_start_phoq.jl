@@ -4,29 +4,25 @@ using FileIO
 using DESilico
 using BOSS
 using OptimizationPRIMA
-using PyCall
-
-pickle = pyimport("pickle")
 
 include("utils.jl")
-include("boss_utils.jl")
 include("embedding_gp.jl")
 include("de_acq_maximizer.jl")
 
 # ___ Data specific parameters ___
 # GB1
-data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+#= data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
 missing_fitness_value = 0.0
-neighborhoods_filename = "gb1_esm1b_euclidean.jld2"
+neighborhoods_filename = "gb1_esm1b_euclidean.jld2" =#
 
 # PhoQ
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
-neighborhoods_filename = "phoq_esm1b_euclidean.jld2" =#
+neighborhoods_filename = "phoq_esm1b_euclidean.jld2"
 
 # ___ Load data ___
 wt_sequence = collect(wt_string)
@@ -45,6 +41,12 @@ sequences = _get_sequences(data_path, "esm-1b_variants.csv", wt_string, mutation
 fitness = _get_fitness(data_path, "esm-1b_fitness_norm.csv")
 sequence_embeddings = _get_sequence_emebeddings(data_path, "esm-1b_embedding_complete.csv")
 
+# ___ Alternative start variant ___
+start_idx = parse(Int, ARGS[1])
+wt_variant = load(joinpath(data_path, "sample_1000.jld2"))["variants"][start_idx]
+map(i -> wt_sequence[mutation_positions[i]] = wt_variant[i], eachindex(wt_variant))
+wt_string = String(wt_sequence)
+
 # ___ Init GP ___
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
@@ -56,62 +58,47 @@ function _extract_embedding(domain_coords::AbstractVector{Int})
     embedding_extractor[sequence]
 end
 
-# ___ Select starting variants ___
-#run_starts = variants_complete
-run_starts = load(joinpath(data_path, "sample_1000.jld2"))["variants"]
+domain = Domain(;
+    bounds=([1, 1, 1, 1], [20, 20, 20, 20]),
+    discrete=[true, true, true, true],
+)
 
-for (v, variant) in enumerate(run_starts)
-    domain = Domain(;
-        bounds=([1, 1, 1, 1], [20, 20, 20, 20]),
-        discrete=[true, true, true, true],
-    )
+model = EmbeddingGP(
+    EmbeddingKernel(Matern32Kernel()),
+    Product([truncated(Normal(0, sqrt(1280) / 3.0); lower=0.0)]), # Multivariate dist with one dimension 
+    _extract_embedding,
+)
 
-    model = EmbeddingGP(
-        EmbeddingKernel(Matern32Kernel()),
-        Product([truncated(Normal(0, sqrt(1280) / 3.0); lower=0.0)]), # Multivariate dist with one dimension 
-        _extract_embedding,
-    )
+data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(wt_variant))), hcat([screening(wt_sequence)]))
+problem = BossProblem(;
+    fitness=LinFitness([1]),
+    f=x -> [screening(_construct_sequence(_decode_domain(x), wt_string, mutation_positions))],
+    domain,
+    model,
+    noise_var_priors=[Dirac(0.0)],
+    data,
+)
 
-    start_variant = map(pos -> start_variant[pos], mutation_positions)
-    data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(start_variant))), hcat([screening(start_variant)]))
-    problem = BossProblem(;
-        fitness=LinFitness([1]),
-        f=x -> [screening(_construct_sequence(_decode_domain(x), start_variant, mutation_positions))],
-        domain,
-        model,
-        noise_var_priors=[Dirac(0.0)],
-        data,
-    )
+model_fitter = BOSS.OptimizationMLE(;
+    algorithm=NEWUOA(),
+    multistart=20,
+    parallel=false,
+    rhoend=1e-4,
+)
 
-    model_fitter = BOSS.OptimizationMLE(;
-        algorithm=NEWUOA(),
-        multistart=20,
-        parallel=true,
-        rhoend=1e-4,
-    )
+# ___ Run GP ___
+bo!(problem;
+    model_fitter,
+    acq_maximizer=DEAcqMaximizer(variant_coords),
+    acquisition=ExpectedImprovement(),
+    term_cond=IterLimit(199),
+    options=BossOptions(;
+        info=true,
+        debug=false,
+    ),
+)
 
-    # ___ Run GP ___
-    bo!(problem;
-        model_fitter,
-        acq_maximizer=DEAcqMaximizer(variant_coords),
-        acquisition=ExpectedImprovement(),
-        term_cond=IterLimit(119),
-        options=BossOptions(;
-            info=true,
-            debug=false,
-        ),
-    )
-
-    save(
-        joinpath(@__DIR__, "data", "gpde", "sampled_starts", "gp_wt_$(v).jld2"),
-        "problem", problem,
-    )
-
-    fitness_progression = get_gp_fitness_progression(problem)
-    file_path = joinpath(@__DIR__, "data", "gpde", "sampled_starts", "gp_wt_$(v)_fitness_progression.pkl")
-    @pywith pybuiltin("open")(file_path, "wb") as f begin
-        pickle.dump([
-                fitness_progression
-            ], f)
-    end
-end
+save(
+    joinpath(@__DIR__, "data", "gpde", "PhoQ", "sample", "gp_$start_idx.jld2"),
+    "problem", problem,
+)
