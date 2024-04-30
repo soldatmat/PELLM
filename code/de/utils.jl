@@ -52,7 +52,7 @@ end
 
 function select_top_k!(variants::AbstractVector{Variant}, k::Int)
     sort!(variants, by=x -> x.fitness, rev=true)
-    _select_first_k(variants, k)
+    select_first_k(variants, k)
 end
 function select_first_k(variants::AbstractVector{Variant}, k::Int)
     selection = Vector{Vector{Char}}(undef, k)

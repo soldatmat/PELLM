@@ -84,7 +84,7 @@ function train_llm(ss::PredictionDistanceMaximizer)
     prediction = fitness_predictor(ss.sequences)
     predicted_variants = map((s, f) -> Variant(s, f), ss.sequences, prediction)
     selected_sequences = select_top_k!(predicted_variants, ss.k)
-    train!(llm, selected_sequences; mask_positions=mutation_posisitions)
+    train!(llm, selected_sequences; mask_positions=mutation_positions)
 end
 
 #selection_strategy = TopKPredicted(fitness_predictor, length(variants[1]), alphabet; k=8000)
