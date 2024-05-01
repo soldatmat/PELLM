@@ -1,6 +1,3 @@
-using Dates
-time = now()
-
 using CSV
 using DataFrames
 using FileIO
@@ -82,10 +79,8 @@ model_fitter = BOSS.OptimizationMLE(;
     parallel=false,
     rhoend=1e-4,
 )
-println("===> TIME OF INIT: $(now() - time)")
 
 # ___ Run GP ___
-time = now()
 bo!(problem;
     model_fitter,
     acq_maximizer=DEAcqMaximizer(variant_coords),
@@ -96,7 +91,6 @@ bo!(problem;
         debug=false,
     ),
 )
-println("===> TIME OF GP: $(now() - time)")
 
 save(
     joinpath(@__DIR__, "data", "gpde", "GB1", "01", "gp.jld2"),
