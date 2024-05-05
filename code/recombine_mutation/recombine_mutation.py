@@ -4,30 +4,58 @@ import copy
 import pandas
 import random
 
-AMINO_ACIDS = ['A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V']
+AMINO_ACIDS = [
+    "A",
+    "R",
+    "N",
+    "D",
+    "C",
+    "Q",
+    "E",
+    "G",
+    "H",
+    "I",
+    "L",
+    "K",
+    "M",
+    "F",
+    "P",
+    "S",
+    "T",
+    "W",
+    "Y",
+    "V",
+]
 
 # Specific to data
-MUTATION_POSITIONS = [0, 1, 2, 3] # [39, 40, 41, 54] in the sequence (indexed from 1)
-WILD_TYPE_VARIANT = 'VDGV'
+MUTATION_POSITIONS = [0, 1, 2, 3]  # [39, 40, 41, 54] in the GB1 wt sequence (indexed from 1)
+
+
 def LOAD_DATA():
-    dfs = pandas.read_excel('../../data/GB1/elife-16965-supp1.xlsx')
-    #dfs = pandas.read_excel('../../data/PhoQ/PhoQ.xlsx')
+    dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
+    # dfs = pandas.read_excel('../../data/PhoQ/PhoQ.xlsx')
     variants = [v for v in dfs.Variants]
     variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
     return variants, variant_fitness
 
+
 MIN_FITNESS = 0
-MISSING_FITNESS = 0 # default fitness for missing variants
+MISSING_FITNESS = 0  # default fitness for missing variants
 N_PARENTS = 3
-MAX_N_TESTED = 384 # 190
-N_SAMPLES = MAX_N_TESTED - (N_PARENTS**len(MUTATION_POSITIONS) - N_PARENTS)
-N_ITER = 1 # multiple iterations are not sensible in this version of the procedure
+MAX_N_TESTED = 384  # 190
+N_SAMPLES = MAX_N_TESTED - (N_PARENTS ** len(MUTATION_POSITIONS) - N_PARENTS)
+N_ITER = 1  # multiple iterations are not sensible in this version of the procedure
 
 
-
-def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_parents=N_PARENTS, n_iter=N_ITER):
+def recombine_mutation(
+    recombinatorial_lib,
+    mutation_positions,
+    fitness_dict,
+    n_parents=N_PARENTS,
+    n_iter=N_ITER,
+):
     best_variant = None
-    fitness_progression = [MIN_FITNESS-1]
+    fitness_progression = [MIN_FITNESS - 1]
 
     lib = recombinatorial_lib
     for i in range(n_iter + 1):
@@ -45,7 +73,9 @@ def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_
 
             evaluated_lib.append((variant, fitness))
         evaluated_lib.sort(key=lambda tup: tup[1], reverse=True)
-        parents = evaluated_lib[:n_parents] # list of tuples (variant_key, fitness) sorted by fitness
+        parents = evaluated_lib[
+            :n_parents
+        ]  # list of tuples (variant_key, fitness) sorted by fitness
 
         if i == n_iter:
             break
@@ -60,7 +90,7 @@ def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_
                 for aa in aa_for_position:
                     if variant[pos] == aa:
                         continue
-                    mutated_variant = variant[:pos] + aa + variant[pos+1:]
+                    mutated_variant = variant[:pos] + aa + variant[pos + 1 :]
                     new_variants.append(mutated_variant)
             lib = lib + new_variants
 
@@ -69,21 +99,22 @@ def recombine_mutation(recombinatorial_lib, mutation_positions, fitness_dict, n_
 
 def main(n_runs=1):
     variants, variant_fitness = LOAD_DATA()
-    combinatorial_lib = list(variant_fitness) # gets keys of dict as list
+    combinatorial_lib = list(variant_fitness)  # gets keys of dict as list
 
     best_variants = []
     fitness_progressions = []
     for r in range(n_runs):
         recombinatorial_lib = random.sample(combinatorial_lib, N_SAMPLES)
-        best_variant, fitness_progression = recombine_mutation(recombinatorial_lib, MUTATION_POSITIONS, variant_fitness)
+        best_variant, fitness_progression = recombine_mutation(
+            recombinatorial_lib, MUTATION_POSITIONS, variant_fitness
+        )
         best_variants.append(best_variant)
         fitness_progressions.append(fitness_progression)
-    
+
     if n_runs == 1:
         return best_variant, fitness_progression
     else:
         return best_variants, fitness_progressions
-
 
 
 if __name__ == "__main__":

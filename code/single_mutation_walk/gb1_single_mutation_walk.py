@@ -35,12 +35,18 @@ START_OPTIONS = [
 ]  # 'wt' - start from the wild type variant, 'all' - run single-mutation walk from each variant
 
 # Specific to data
-MUTATION_POSITIONS = [0, 1, 2, 3]  # [39, 40, 41, 54] in the sequence (indexed from 1)
-WILD_TYPE_VARIANT = "VDGV"
+MUTATION_POSITIONS = [
+    0,
+    1,
+    2,
+    3,
+]  # [39, 40, 41, 54] in the GB1 wt sequence (indexed from 1)
+# WILD_TYPE_VARIANT = "VDGV" # GB1
+WILD_TYPE_VARIANT = "AVST"  # PhoQ
 
 
 def LOAD_DATA():
-    #dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
+    # dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
     dfs = pandas.read_excel("../../data/PhoQ/PhoQ.xlsx")
     variants = [v for v in dfs.Variants]
     variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
