@@ -40,12 +40,22 @@ function _update_sequences!(ss::PredictionDistanceMaximizer, variants::AbstractV
 end
 
 function _select_farthest_k(ss::PredictionDistanceMaximizer, predicted_variants::AbstractVector{Variant})
-    min_distances = _get_min_distances(ss, predicted_variants)
+    dataset_labels = copy(ss.labels)
+    selected_variants = Vector{Vector{Char}}([])
+    for i=1:ss.k
+        farthest_pair = _select_farthest(dataset_labels, predicted_variants)
+        append!(selected_variants, farthest_pair[1])
+        append!(dataset_labels, farthest_pair[2])
+    end
+    return selected_variants
+end
+function _select_farthest(dataset_labels::Vector{Float64}, predicted_variants::AbstractVector{Variant})
+    min_distances = _get_min_distances(dataset_labels, predicted_variants)
     pairs = map(i -> (predicted_variants[i].sequence, min_distances[i]), eachindex(predicted_variants))
     sort!(pairs, by=pair -> pair[2], rev=true)
-    map(pair -> pair[1], pairs[1:ss.k])
+    pairs[1]
 end
-function _get_min_distances(ss::PredictionDistanceMaximizer, predicted_variants::AbstractVector{Variant})
-    distances = pairwise(cityblock, map(v -> v.fitness, predicted_variants), ss.labels)
-    min_distances = map(row -> minimum(row), eachrow(distances))
+function _get_min_distances(dataset_labels::Vector{Float64}, predicted_variants::AbstractVector{Variant})
+    distances = pairwise(cityblock, map(v -> v.fitness, predicted_variants), dataset_labels)
+    map(row -> minimum(row), eachrow(distances))
 end
