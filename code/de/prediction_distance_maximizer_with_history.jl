@@ -19,12 +19,12 @@ struct PredictionDistanceMaximizerWithHistory{T<:FitnessPredictor} <: DESilico.S
         screened_sequences = map(variant -> variant.sequence, screened)
         sequences = filter(sequence -> !(sequence in screened_sequences), sequences)
         labels = map(variant -> variant.fitness, screened)
-        new{T}(model, sequences, labels, k, repeat, train_callback, Vector{Float64}([]))
+        new{T}(model, sequences, labels, k, repeat, train_callback, Vector{Float64}([]), screening)
     end
 end
 
-PredictionDistanceMaximizerWithHistory(model, sequences; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, sequences, screened, k, repeat, train_callback, screening)
-PredictionDistanceMaximizerWithHistory(model, sequence_length::Int, alphabet::Set{Char}; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, recombine_symbols(sequence_length, alphabet), screened, k, repeat, train_callback, screening)
+PredictionDistanceMaximizerWithHistory(model, sequences; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizerWithHistory) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizerWithHistory(model, sequences, screened, k, repeat, train_callback, screening)
+PredictionDistanceMaximizerWithHistory(model, sequence_length::Int, alphabet::Set{Char}; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizerWithHistory) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizerWithHistory(model, recombine_symbols(sequence_length, alphabet), screened, k, repeat, train_callback, screening)
 
 function (ss::PredictionDistanceMaximizerWithHistory)(variants::AbstractVector{Variant})
     ss.repeat || _update_sequences!(ss, variants)
