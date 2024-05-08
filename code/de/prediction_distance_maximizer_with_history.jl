@@ -3,7 +3,7 @@ using Distances
 """
 TODO
 """
-struct PredictionDistanceMaximizer{T<:FitnessPredictor} <: DESilico.SelectionStrategy
+struct PredictionDistanceMaximizerWithHistory{T<:FitnessPredictor} <: DESilico.SelectionStrategy
     model::T
     sequences::Vector{Vector{Char}}
     labels::Vector{Float64}
@@ -13,7 +13,7 @@ struct PredictionDistanceMaximizer{T<:FitnessPredictor} <: DESilico.SelectionStr
     prediction_history::Vector{Float64}
     screening::DESilico.Screening
 
-    function PredictionDistanceMaximizer(model::T, sequences::Vector{Vector{Char}}, screened::AbstractVector{Variant}, k::Int, repeat::Bool, train_callback::Function, screening::DESilico.Screening) where {T<:FitnessPredictor}
+    function PredictionDistanceMaximizerWithHistory(model::T, sequences::Vector{Vector{Char}}, screened::AbstractVector{Variant}, k::Int, repeat::Bool, train_callback::Function, screening::DESilico.Screening) where {T<:FitnessPredictor}
         k > 0 || throw(ArgumentError("`k` needs to be greater than 0"))
         @assert k <= length(sequences)
         screened_sequences = map(variant -> variant.sequence, screened)
@@ -23,10 +23,10 @@ struct PredictionDistanceMaximizer{T<:FitnessPredictor} <: DESilico.SelectionStr
     end
 end
 
-PredictionDistanceMaximizer(model, sequences; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer)->nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, sequences, screened, k, repeat, train_callback, screening)
-PredictionDistanceMaximizer(model, sequence_length::Int, alphabet::Set{Char}; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer)->nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, recombine_symbols(sequence_length, alphabet), screened, k, repeat, train_callback, screening)
+PredictionDistanceMaximizerWithHistory(model, sequences; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, sequences, screened, k, repeat, train_callback, screening)
+PredictionDistanceMaximizerWithHistory(model, sequence_length::Int, alphabet::Set{Char}; screened::AbstractVector{Variant}=Vector{Variant}([]), k::Int=1, repeat::Bool=true, train_callback::Function=(::PredictionDistanceMaximizer) -> nothing, screening::DESilico.Screening) = PredictionDistanceMaximizer(model, recombine_symbols(sequence_length, alphabet), screened, k, repeat, train_callback, screening)
 
-function (ss::PredictionDistanceMaximizer)(variants::AbstractVector{Variant})
+function (ss::PredictionDistanceMaximizerWithHistory)(variants::AbstractVector{Variant})
     ss.repeat || _update_sequences!(ss, variants)
     train!(ss.model, variants)
     ss.train_callback(ss)
@@ -36,22 +36,22 @@ function (ss::PredictionDistanceMaximizer)(variants::AbstractVector{Variant})
     _select_farthest_k(ss, predicted_variants)
 end
 
-function _update_sequences!(ss::PredictionDistanceMaximizer, variants::AbstractVector{Variant})
+function _update_sequences!(ss::PredictionDistanceMaximizerWithHistory, variants::AbstractVector{Variant})
     append!(ss.labels, map(variant -> variant.fitness, variants))
     screened_sequences = map(variant -> variant.sequence, variants)
     filter!(sequence -> !(sequence in screened_sequences), ss.sequences)
 end
 
-function _screen_predicted_variants(ss::PredictionDistanceMaximizer, predicted_variants::AbstractVector{Tuple{Vector{Char}, Float64}})
-    sorted_variants = sort(predicted_variants, by=x->x[2], rev=true)
-    true_fitness = ss.screening(sorted_variants[1:100])
+function _screen_predicted_variants(ss::PredictionDistanceMaximizerWithHistory, predicted_variants::AbstractVector{Variant})
+    sorted_variants = sort(predicted_variants, by=variant -> variant.fitness, rev=true)
+    true_fitness = ss.screening(map(variant -> variant.sequence, sorted_variants[1:100]))
     maximum(true_fitness)
 end
 
-function _select_farthest_k(ss::PredictionDistanceMaximizer, predicted_variants::AbstractVector{Variant})
+function _select_farthest_k(ss::PredictionDistanceMaximizerWithHistory, predicted_variants::AbstractVector{Variant})
     dataset_labels = copy(ss.labels)
     selected_variants = Vector{Vector{Char}}([])
-    for i=1:ss.k
+    for i = 1:ss.k
         farthest_pair = _select_farthest(dataset_labels, predicted_variants)
         append!(selected_variants, [farthest_pair[1]])
         append!(dataset_labels, farthest_pair[2])

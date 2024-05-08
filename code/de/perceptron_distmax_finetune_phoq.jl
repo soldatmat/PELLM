@@ -20,6 +20,7 @@ include("top_k_predicted.jl")
 include("llm_sampler.jl")
 include("distance_maximizer.jl")
 include("cumulative_select.jl")
+include("prediction_distance_maximizer.jl")
 include("prediction_distance_maximizer_with_history.jl")
 include("no_mutagenesis.jl")
 
@@ -79,7 +80,7 @@ embedding_extractor = LLMEmbeddingExtractor(llm; batch_size=100, return_tensor=t
 fp_model = nn_model.TwoLayerPerceptron(torch.nn.Sigmoid(), embedding_extractor.embedding_size)
 fitness_predictor = EmbeddingNN(embedding_extractor, fp_model)
 
-function train_llm(ss::PredictionDistanceMaximizer)
+function train_llm(ss::PredictionDistanceMaximizerWithHistory)
     println("Finetuning LLM ...")
     prediction = fitness_predictor(ss.sequences)
     predicted_variants = map((s, f) -> Variant(s, f), ss.sequences, prediction)
@@ -89,7 +90,7 @@ end
 
 #selection_strategy = TopKPredicted(fitness_predictor, length(variants[1]), alphabet; k=8000)
 #selection_strategy = TopKPredicted(fitness_predictor, sequences_complete; k=8000) # AFP-DE k=8000 (! + 1000 other sequences)
-selection_strategy = PredictionDistanceMaximizer(fitness_predictor, sequences_complete; screened=sequence_space.variants, k=24, repeat=false, train_callback=train_llm, screening)
+selection_strategy = PredictionDistanceMaximizerWithHistory(fitness_predictor, sequences_complete; screened=sequence_space.variants, k=24, repeat=false, train_callback=train_llm, screening)
 
 #alphabet_extractor = LLMSampler(llm; sampling_sequence=wt_sequence, alphabet, k=3) # k=3 from AFP-DE
 #mutagenesis = DESilico.Recombination(alphabet_extractor; mutation_positions, n=24) # n=24 from AFP-DE
