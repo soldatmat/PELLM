@@ -1,12 +1,12 @@
 using DESilico
 using CSV
 using FileIO
-using PyCall
+#using PyCall
 
-torch = pyimport("torch")
+#torch = pyimport("torch")
 
-pushfirst!(pyimport("sys")."path", joinpath(@__DIR__))
-nn_model = pyimport("two_layer_perceptron")
+#pushfirst!(pyimport("sys")."path", joinpath(@__DIR__))
+#nn_model = pyimport("two_layer_perceptron")
 
 include("types.jl")
 include("utils.jl")
@@ -16,12 +16,12 @@ include("library_select.jl")
 include("cumulative_select.jl")
 include("repeating_library_select.jl")
 include("neighborhood_search.jl")
-include("centrality_maximizer.jl")
-include("training_screening.jl")
-include("embedding_nn.jl")
-include("dict_embedding_extractor.jl")
+#include("centrality_maximizer.jl")
+#include("training_screening.jl")
+#include("embedding_nn.jl")
+#include("dict_embedding_extractor.jl")
 
-GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
+#GC.gc() # For re-runs, GPU allocs by Python sometimes do not get freed automatically
 
 # ___ Data specific parameters ___
 # GB1
@@ -123,3 +123,12 @@ length(Set(sequence_space.variants))
 
 history = reconstruct_history(sequence_space.variants)
 fitness_progression = map(v -> v.fitness, history)
+
+# ___ Save results ___
+save(
+    joinpath(@__DIR__, "data", "neighborhood_de", "with_history", "results_wt.jld2"),
+    "result", sequence_space.top_variant.fitness,
+    "screened", length(sequence_space.variants),
+    "history", copy(sequence_space.variants),
+    "fitness_progression", fitness_progression,
+)
