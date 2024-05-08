@@ -101,7 +101,7 @@ history = reconstruct_history(sequence_space.variants)
 top_sequence = map(v -> v.sequence, history)
 top_variant = map(sequence -> extract_residues(sequence, mutation_positions), top_sequence)
 top_fitness = map(v -> v.fitness, history)
-save_path = joinpath(@__DIR__, "data", "perceptron_distmax_phoq_02")
+save_path = joinpath(@__DIR__, "data", "perceptron_distmax_phoq_01")
 save(
     joinpath(save_path, "de.jld2"),
     "sequence_space", sequence_space,

@@ -18,7 +18,7 @@ def train(model, sequences, mask_positions, mask_token, n_tokens, device):
     model.train()
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.00001)
     loss_function = torch.nn.CrossEntropyLoss()
-    dataloader = DataLoader(SequenceDataset(sequences), batch_size=10)
+    dataloader = DataLoader(SequenceDataset(sequences), batch_size=1)
     epochs = 1
 
     for epoch in range(epochs):
@@ -26,7 +26,8 @@ def train(model, sequences, mask_positions, mask_token, n_tokens, device):
         for batch in dataloader:
             optimizer.zero_grad()
 
-            input_sequences = batch.to(device)
+            batch = batch.to(device)
+            input_sequences = batch.clone()
             input_sequences[:, mask_positions] = mask_token
             logits = model(input_sequences)['logits']
 
