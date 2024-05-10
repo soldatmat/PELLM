@@ -85,18 +85,22 @@ file_path = joinpath(@__DIR__, "data", "neighborhood_de", "history_esm1b_NDYP.pk
 end
 
 # ___ MLDE ___
-d = load(joinpath(@__DIR__, "data", "mlde_output_distmax_01", "history.jld2"))
-sequence_space = d["sequence_space"]
-selection_strategy = d["selection_strategy"]
-mutagenesis = d["mutagenesis"]
+folder_path = joinpath(@__DIR__, "data", "perceptron", "perceptron_distmax_finetune_01")
+d = load(joinpath(folder_path, "history.jld2"))
 
-file_path = joinpath(@__DIR__, "data", "mlde_output_distmax_01", "fitness_progression.pkl")
+file_path = joinpath(folder_path, "fitness_progression.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             d["top_fitness"]
         ], f)
 end
 
+file_path = joinpath(folder_path, "prediction_history.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([
+            d["prediction_history"]
+        ], f)
+end
 
 # ___ GPDE ___
 d = load(joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats.jld2"))
@@ -104,6 +108,17 @@ d = load(joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats.jld2"))
 fitness_progression = get_gp_fitness_progression(problem.data.Y)
 
 file_path = joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats_fitness_progression.pkl")
+@pywith pybuiltin("open")(file_path, "wb") as f begin
+    pickle.dump([
+            fitness_progression
+        ], f)
+end
+
+
+
+# ___ Neighborhood DE ___
+folder_path = joinpath(@__DIR__, "data", "PhoQ", "neighborhood_de", "with_history")
+file_path = joinpath(folder_path, "wt_fitness_progression.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             fitness_progression
