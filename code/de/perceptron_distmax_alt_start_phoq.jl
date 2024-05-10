@@ -37,19 +37,19 @@ missing_fitness_value = 0.0 =#
 # PhoQ
 data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
 xlsx_file = "PhoQ.xlsx"
-#wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
+wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
 
 # ___ Alternative start variant ___
+wt_sequence = collect(wt_string)
 start_idx = parse(Int, ARGS[1])
-wt_variant = load(joinpath(data_path, "sample_1000.jld2"))["variants"][start_idx]
-map(i -> wt_sequence[mutation_positions[i]] = wt_variant[i], eachindex(wt_variant))
+start_variant = load(joinpath(data_path, "sample_1000.jld2"))["variants"][start_idx]
+map(i -> wt_sequence[mutation_positions[i]] = start_variant[i], eachindex(start_variant))
 wt_string = String(wt_sequence)
 
 # ___ Load data ___
 alphabet = DESilico.alphabet.protein
-wt_sequence = collect(wt_string)
 sequences = _get_sequences(data_path, "esm-1b_variants.csv", wt_string, mutation_positions)
 sequences_complete = _get_sequences(data_path, "esm-1b_variants_complete.csv", wt_string, mutation_positions)
 fitness = _get_fitness(data_path, "esm-1b_fitness_norm.csv")
@@ -69,7 +69,7 @@ mask_string = llm.alphabet.all_toks[llm.alphabet.mask_idx+1] # +1 for julia vs P
 screening = DESilico.DictScreening(Dict(sequences .=> fitness), missing_fitness_value)
 
 # ___ Passive Sampling ___
-#wt_variant = Variant(wt_sequence, screening(wt_sequence))
+wt_variant = Variant(wt_sequence, screening(wt_sequence))
 sequence_space = SequenceSpace{Vector{Variant}}([wt_variant])
 distance_maximizer = DistanceMaximizer(sequences_complete, sequence_embeddings_a)
 cumulative_select = CumulativeSelect(sequence_space.population)
@@ -109,7 +109,7 @@ history = reconstruct_history(sequence_space.variants)
 top_sequence = map(v -> v.sequence, history)
 top_variant = map(sequence -> extract_residues(sequence, mutation_positions), top_sequence)
 top_fitness = map(v -> v.fitness, history)
-save_path = joinpath(@__DIR__, "data", "perceptron", "perceptron_distmax_rerun")
+save_path = joinpath(@__DIR__, "data", "perceptron", "PhoQ", "sample")
 #= save(
     joinpath(save_path, "de.jld2"),
     "sequence_space", sequence_space,
