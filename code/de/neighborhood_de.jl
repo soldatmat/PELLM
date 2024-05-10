@@ -78,34 +78,34 @@ de!(
     mutagenesis=distance_maximizer,
     n_iterations=9,
 )
-starting_variants = sequence_space.variants
+init_variants = collect(sequence_space.variants)
 
-#starting_variants = map(i -> Variant(sequences_complete[i], screening(sequences_complete[i])), get_top_centrality(neighborhoods, 10))
+#init_variants = map(i -> Variant(sequences_complete[i], screening(sequences_complete[i])), get_top_centrality(neighborhoods, 10))
 
 knn = 16
 neighborhood_search = NeighborhoodSearch(
     sequences_complete,
     neighborhoods[1:knn, :];
     repeat=false,
-    screened=map(variant -> variant.sequence, collect(starting_variants)),
+    screened=map(variant -> variant.sequence, init_variants),
     #n=1,
 )
 #= neighborhood_search = NeighborhoodSearchWithPredictor(
     sequences_complete,
     neighborhoods[1:knn, :];
     repeat=false,
-    screened=map(variant -> variant.sequence, collect(starting_variants)),
+    screened=map(variant -> variant.sequence, collect(init_variants)),
     predictor=fitness_predictor,
 ) =#
 
-library_select = LibrarySelect(1, starting_variants)
+library_select = LibrarySelect(1, init_variants)
 #library_select = LibrarySelect(1, Vector{Variant}([]))
-#library_select = SamplingLibrarySelect(1, starting_variants, distance_maximizer, screening, sequence_space)
+#library_select = SamplingLibrarySelect(1, init_variants, distance_maximizer, screening, sequence_space)
 #library_select = RepeatingLibrarySelect()
 
 parent_sequence = library_select()[1]
-sequence_space = SequenceSpace{Vector{Variant}}([Variant(parent_sequence, screening(parent_sequence))])
-DESilico.push_variants!(sequence_space, collect(library_select.library))
+parent_variant = Variant(parent_sequence, screening(parent_sequence))
+sequence_space = SequenceSpace([parent_sequence], init_variants, parent_variant)
 de!(
     sequence_space;
     screening=screening, #training_screening,
