@@ -5,7 +5,7 @@ pickle = pyimport("pickle")
 
 include("best_so_far.jl")
 
-folder_path = joinpath(@__DIR__, "..", "de", "data", "perceptron", "perceptron_distmax_phoq_01")
+folder_path = joinpath(@__DIR__, "..", "de", "data", "perceptron", "perceptron_distmax_finetune_phoq_01")
 d = load(joinpath(folder_path, "history.jld2"))
 top_fitness = d["top_fitness"]
 prediction_history = d["prediction_history"]
@@ -25,3 +25,8 @@ save(
         ], f)
 end
 
+@pywith pybuiltin("open")(joinpath(folder_path, "fitness_progression.pkl"), "wb") as f begin
+    pickle.dump([
+            top_fitness
+        ], f)
+end
