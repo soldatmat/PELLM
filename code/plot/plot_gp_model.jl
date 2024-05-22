@@ -18,8 +18,8 @@ def load_pickle(fpath):
 load_pickle = py"load_pickle"
 
 include("../de/utils.jl")
-include("../de/embedding_gp.jl")
-include("../de/de_acq_maximizer.jl")
+include("../de/boes/lib/embedding_gp.jl")
+include("../de/boes/lib/de_acq_maximizer.jl")
 
 
 # GB1
