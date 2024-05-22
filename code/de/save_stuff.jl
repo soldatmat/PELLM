@@ -103,11 +103,12 @@ file_path = joinpath(folder_path, "prediction_history.pkl")
 end
 
 # ___ GPDE ___
-d = load(joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats.jld2"))
+include("boss_utils.jl")
+d = load(joinpath(@__DIR__, "data", "gpde", "GB1", "01", "gp.jld2"))
 
-fitness_progression = get_gp_fitness_progression(problem.data.Y)
+fitness_progression = get_gp_fitness_progression(d["problem"].data.Y)
 
-file_path = joinpath(@__DIR__, "data", "PhoQ", "gpde", "gp_384_no_repeats_fitness_progression.pkl")
+file_path = joinpath(@__DIR__, "data", "gpde", "GB1", "01", "gp_fitness_progression.pkl")
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             fitness_progression
