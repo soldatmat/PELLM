@@ -9,6 +9,17 @@ This repository contains source code developed as part of my diploma thesis avai
 
 - Folder `code/plot` and `code/dimred` contain code used to generate included graphics.
 
+## Installation
+To start using the proposed MLDE methods implemented in `code/de`, please follow these steps:
+1) Install Julia.
+2) Install Conda.
+3) In `code/de/setup_pycall.jl` set `CONDA_PATH` to path to the Conda root folder.
+4) In bash run:
+```
+cd code/de
+source setup.sh
+```
+
 ## Acknowledgements
 All of the proposed MLDE methods require a pre-trained protein language model as an embedding extractor.<br/>
 If you use the ESM-1b model, cite the original paper.
