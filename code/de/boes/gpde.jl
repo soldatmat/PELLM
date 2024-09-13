@@ -61,6 +61,7 @@ model = EmbeddingGP(
     EmbeddingKernel(Matern32Kernel()), # Matern32Kernel(; metric=Euclidean())
     Product([truncated(Normal(0, sqrt(1280) / 3.0); lower=0.0)]), # Multivariate dist with one dimension 
     _extract_embedding,
+    [Dirac(0.0)],
 )
 
 data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(wt_variant))), hcat([screening(wt_sequence)]))
@@ -69,11 +70,10 @@ problem = BossProblem(;
     f=x -> [screening(_construct_sequence(_decode_domain(x), wt_string, mutation_positions))],
     domain,
     model,
-    noise_var_priors=[Dirac(0.0)],
     data,
 )
 
-model_fitter = BOSS.OptimizationMLE(;
+model_fitter = BOSS.OptimizationMAP(;
     algorithm=NEWUOA(),
     multistart=20,
     parallel=false,

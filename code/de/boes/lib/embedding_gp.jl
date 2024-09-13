@@ -28,47 +28,61 @@ struct EmbeddingGP <: BOSS.SurrogateModel
     kernel::EmbeddingKernel
     length_scale_prior::MultivariateDistribution
     extract_embedding::Function
+    noise_std_priors::AbstractVector{<:UnivariateDistribution}
+end
+
+function finite_EmbeddingGP(X::AbstractMatrix{<:Real}, kernel::Kernel, length_scales::AbstractVector{<:Real}, noise_std::Real)
+    mean = nothing
+    amplitude = 1.0
+    BOSS.finite_gp(X, mean, kernel, length_scales, amplitude, noise_std)
 end
 
 BOSS.make_discrete(model::EmbeddingGP, discrete::AbstractVector{<:Bool}) = model
 
-function BOSS.model_posterior(model::EmbeddingGP, data::BOSS.ExperimentDataMLE)
-    embedding_posterior = BOSS.model_posterior(
-        nothing,
-        model.kernel.kernel,
-        reduce(hcat, model.extract_embedding.(eachcol(data.X))),
-        data.Y[1,:],
-        data.length_scales[:,1],
-        data.noise_vars[1],
+function BOSS.model_posterior(model::EmbeddingGP, data::BOSS.ExperimentDataMAP)
+    θ, λ, α, noise_std = data.params
+    embedding_posterior = AbstractGPs.posterior(
+        finite_EmbeddingGP(
+            hcat(model.extract_embedding.(eachcol(data.X))...),
+            model.kernel,
+            λ[:, 1],
+            noise_std[1]
+        ),
+        data.Y[1, :],
     )
 
     function posterior(x)
         x = model.extract_embedding(x)
-        μ, σ2 = embedding_posterior(x)
-        ([μ], [σ2])
+        μ, σ2 = mean_and_var(embedding_posterior(hcat(x)))
+        return μ, sqrt.(σ2)
     end
 end
 
-function BOSS.model_loglike(model::EmbeddingGP, noise_var_priors::AbstractVector{<:UnivariateDistribution}, data::ExperimentData)
+function BOSS.model_loglike(model::EmbeddingGP, data::ExperimentData)
     X = reduce(hcat, model.extract_embedding.(eachcol(data.X)))
-    function loglike(θ, length_scales, noise_vars)
-        ll_noise_variance = logpdf(noise_var_priors[1], noise_vars[1])
-        ll_length_scales = logpdf(model.length_scale_prior, length_scales[:,1])
-        gp = BOSS.finite_gp(nothing, model.kernel, X, length_scales[:,1], noise_vars[1])
-        ll_data = logpdf(gp, data.Y[1,:])
-        ll_noise_variance + ll_length_scales + ll_data
+    function loglike(model_params::BOSS.ModelParams)
+        θ, λ, α, noise_std = model_params
+        ll_length_scales = logpdf(model.length_scale_prior, λ[:, 1])
+        ll_noise_std = logpdf(model.noise_std_priors[1], noise_std[1])
+
+        gp = finite_EmbeddingGP(data.X, model.kernel, λ[:, 1], noise_std[1])
+        ll_data = logpdf(gp, data.Y[1, :])
+
+        ll_noise_std + ll_length_scales + ll_data
     end
 end
 
-function BOSS.sample_params(model::EmbeddingGP, noise_var_priors::AbstractVector{<:UnivariateDistribution})
+function BOSS.sample_params(model::EmbeddingGP)
     θ_sample = Real[]
     λ_sample = hcat(rand(model.length_scale_prior))
-    noise_vars_sample = rand.(noise_var_priors)
-    return (θ_sample, λ_sample, noise_vars_sample)
+    α_sample = Real[]
+    noise_std = rand.(model.noise_std_priors)
+    return (θ_sample, λ_sample, α_sample, noise_std)
 end
 
 function BOSS.param_priors(model::EmbeddingGP)
     θ_priors = UnivariateDistribution[]
     λ_priors = [model.length_scale_prior]
-    return (θ_priors, λ_priors)
+    α_priors = UnivariateDistribution[]
+    return (θ_priors, λ_priors, α_priors, model.noise_std_priors)
 end
