@@ -1,5 +1,5 @@
 # Protein Engineering with Large Language Models
-This repository contains source code developed as part of my diploma thesis.
+This repository contains source code developed as part of my diploma thesis available at https://dspace.cvut.cz/handle/10467/115759.
 
 - The three proposed MLDE methods are implemented in `code/de`.
 
