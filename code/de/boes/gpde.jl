@@ -58,7 +58,7 @@ domain = Domain(;
 )
 
 model = EmbeddingGP(
-    EmbeddingKernel(Matern32Kernel()),
+    EmbeddingKernel(Matern32Kernel()), # Matern32Kernel(; metric=Euclidean())
     Product([truncated(Normal(0, sqrt(1280) / 3.0); lower=0.0)]), # Multivariate dist with one dimension 
     _extract_embedding,
 )

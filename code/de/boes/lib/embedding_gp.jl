@@ -18,7 +18,11 @@ function with_lengthscale(kernel::EmbeddingKernel, lengthscales::AbstractVector{
     with_lengthscale(kernel, lengthscales[1])
 end
 
-
+# kernel = with_lengthscale(SqExponentialKernel(), 2.5);
+# kernel(x, y) ≈ (SqExponentialKernel() ∘ ScaleTransform(0.4))          = SqExponentialKernel(x1 * 0.4, x2 * 0.4)
+#
+# kernel = with_lengthscale(SqExponentialKernel(), [0.5, 2.5]);
+# kernel(x, y) ≈ (SqExponentialKernel() ∘ ARDTransform([2, 0.4]))(x, y) = SqExponentialKernel(x1 * 2, x2 * 0.4)
 
 struct EmbeddingGP <: BOSS.SurrogateModel
     kernel::EmbeddingKernel
