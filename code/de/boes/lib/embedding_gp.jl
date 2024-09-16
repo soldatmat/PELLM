@@ -52,8 +52,13 @@ function BOSS.model_posterior(model::EmbeddingGP, data::BOSS.ExperimentDataMAP)
     )
 
     function posterior(x)
+        function fix_negative_var(var::Real)
+            (var < 0.) & (var > -1e-10) ? 0. : var
+        end
+
         x = model.extract_embedding(x)
         μ, σ2 = mean_and_var(embedding_posterior(hcat(x)))
+        σ2 = fix_negative_var.(σ2)
         return μ, sqrt.(σ2)
     end
 end
