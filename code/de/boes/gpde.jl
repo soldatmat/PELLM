@@ -9,8 +9,16 @@ include("../utils.jl")
 include("lib/embedding_gp.jl")
 include("lib/de_acq_maximizer.jl")
 
+# ___ Arguments ___
+# First argument can specify the index of the sampled starting variant to be used instead of the wild-type variant.
+sampled_starting_variant_idx = nothing
+if length(ARGS) >= 1
+    sampled_starting_variant_idx = parse(Int, ARGS[1])
+end
+
 # ___ Data specific parameters ___
 # GB1
+dataset_name = "GB1"
 data_path = joinpath(@__DIR__, "..", "..", "..", "data", "GB1")
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
@@ -18,15 +26,22 @@ missing_fitness_value = 0.0
 neighborhoods_filename = "gb1_esm1b_euclidean.jld2"
 
 # PhoQ
-#= data_path = joinpath(@__DIR__, "..", "..", "..", "data", "PhoQ")
+#= dataset_name = "PhoQ"
+data_path = joinpath(@__DIR__, "..", "..", "..", "data", "PhoQ")
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
 neighborhoods_filename = "phoq_esm1b_euclidean.jld2" =#
 
-# ___ Load data ___
+# ___ Select starting variant ___
 wt_sequence = collect(wt_string)
-wt_variant = map(pos -> wt_sequence[pos], mutation_positions)
+if isnothing(sampled_starting_variant_idx)
+    starting_variant = map(pos -> wt_sequence[pos], mutation_positions)
+else
+    starting_variant = load(joinpath(data_path, "sample_1000.jld2"))["variants"][sampled_starting_variant_idx]
+end
+
+# ___ Load data ___
 alphabet = collect(DESilico.alphabet.protein)
 domain_encoder = Dict(alphabet .=> eachindex(alphabet))
 _encode_domain_float(variant::AbstractVector{Char}) = map(symbol -> Float64.(domain_encoder[symbol]), variant)
@@ -64,7 +79,7 @@ model = EmbeddingGP(
     [Dirac(0.0)],
 )
 
-data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(wt_variant))), hcat([screening(wt_sequence)]))
+data = BOSS.ExperimentDataPrior(Matrix{Float64}(hcat(_encode_domain_float(starting_variant))), hcat([screening(wt_sequence)]))
 problem = BossProblem(;
     fitness=LinFitness([1]),
     f=x -> [screening(_construct_sequence(_decode_domain(x), wt_string, mutation_positions))],
@@ -92,7 +107,14 @@ bo!(problem;
     ),
 )
 
-save(
-    joinpath(@__DIR__, "data", "gpde", "GB1", "01", "gp.jld2"),
-    "problem", problem,
-)
+if isnothing(sampled_starting_variant_idx)
+    save(
+        joinpath(@__DIR__, "data", "boes", dataset_name, "01", "boes_wt.jld2"),
+        "problem", problem,
+    )
+else
+    save(
+        joinpath(@__DIR__, "data", "boes", dataset_name, "sample", "boes_$sampled_starting_variant_idx.jld2"),
+        "problem", problem,
+    )
+end

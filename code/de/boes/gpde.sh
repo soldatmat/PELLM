@@ -2,6 +2,6 @@
 
 source ~/.bashrc
 
-cd ~/master/code/de/boes
+cd ~/PELLM/code/de/boes
 
 julia gpde_run.jl
