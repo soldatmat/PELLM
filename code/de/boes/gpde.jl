@@ -109,12 +109,12 @@ bo!(problem;
 
 if isnothing(sampled_starting_variant_idx)
     save(
-        joinpath(@__DIR__, "data", "boes", dataset_name, "01", "boes_wt.jld2"),
+        joinpath(@__DIR__, "..", "data", "boes", dataset_name, "01", "boes_wt.jld2"),
         "problem", problem,
     )
 else
     save(
-        joinpath(@__DIR__, "data", "boes", dataset_name, "sample", "boes_$sampled_starting_variant_idx.jld2"),
+        joinpath(@__DIR__, "..", "data", "boes", dataset_name, "sample", "boes_$sampled_starting_variant_idx.jld2"),
         "problem", problem,
     )
 end
