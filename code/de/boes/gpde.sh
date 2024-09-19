@@ -4,4 +4,4 @@ source ~/.bashrc
 
 cd ~/PELLM/code/de/boes
 
-julia gpde_run.jl
+julia gpde_run.jl $1
