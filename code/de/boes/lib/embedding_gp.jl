@@ -39,11 +39,13 @@ end
 
 BOSS.make_discrete(model::EmbeddingGP, discrete::AbstractVector{<:Bool}) = model
 
+_extract_embeddings(X::AbstractMatrix{<:Real}) = reduce(hcat, model.extract_embedding.(eachcol(X)))
+
 function BOSS.model_posterior(model::EmbeddingGP, data::BOSS.ExperimentDataMAP)
     θ, λ, α, noise_std = data.params
     embedding_posterior = AbstractGPs.posterior(
         finite_EmbeddingGP(
-            hcat(model.extract_embedding.(eachcol(data.X))...),
+            _extract_embeddings(data.X),
             model.kernel,
             λ[:, 1],
             noise_std[1]
@@ -64,13 +66,13 @@ function BOSS.model_posterior(model::EmbeddingGP, data::BOSS.ExperimentDataMAP)
 end
 
 function BOSS.model_loglike(model::EmbeddingGP, data::ExperimentData)
-    X = reduce(hcat, model.extract_embedding.(eachcol(data.X)))
+    X = _extract_embeddings(data.X)
     function loglike(model_params::BOSS.ModelParams)
         θ, λ, α, noise_std = model_params
         ll_length_scales = logpdf(model.length_scale_prior, λ[:, 1])
         ll_noise_std = logpdf(model.noise_std_priors[1], noise_std[1])
 
-        gp = finite_EmbeddingGP(data.X, model.kernel, λ[:, 1], noise_std[1])
+        gp = finite_EmbeddingGP(X, model.kernel, λ[:, 1], noise_std[1])
         ll_data = logpdf(gp, data.Y[1, :])
 
         ll_noise_std + ll_length_scales + ll_data
