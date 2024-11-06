@@ -23,26 +23,25 @@ include("../de/boes/lib/de_acq_maximizer.jl")
 
 
 # GB1
-data_path = joinpath(@__DIR__, "..", "..", "data", "GB1")
+dataset_name = "GB1"
 wt_string = "MQYKLILNGKTLKGETTTEAVDAATAEKVFKQYANDNGVDGEWTYDDATKTFTVTE"  # ['V', 'D', 'G', 'V']
 mutation_positions = [39, 40, 41, 54]
 missing_fitness_value = 0.0
-neighborhoods_filename = "gb1_esm1b_euclidean.jld2"
 #coord_filename = "GB1_pca.pkl"
 coord_filename = "GB1_tsne.pkl"
 coord_variants = "GB1_variants.pkl"
 
 # PhoQ
-#= data_path = joinpath(@__DIR__, "..", "..", "data", "PhoQ")
+#= dataset_name = "PhoQ"
 wt_string = "MKKLLRLFFPLSLRVRFLLATAAVVLVLSLAYGMVALIGYSVSFDKTTFRLLRGESNLFYTLAKWENNKLHVELPENIDKQSPTMTLIYDENGQLLWAQRDVPWLMKMIQPDWLKSNGFHEIEADVNDTSLLLSGDHSIQQQLQEVREDDDDAEMTHSVAVNVYPATSRMPKLTIVVVDTIPVELKSSYMVWSWFIYVLSANLLLVIPLLWVAAWWSLRPIEALAKEVRELEEHNRELLNPATTRELTSLVRNLNRLLKSERERYDKYRTTLTDLTHSLKTPLAVLQSTLRSLRSEKMSVSDAEPVMLEQISRISQQIGYYLHRASMRGGTLLSRELHPVAPLLDNLTSALNKVYQRKGVNISLDISPEISFVGEQNDFVEVMGNVLDNACKYCLEFVEISARQTDEHLYIVVEDDGPGIPLSKREVIFDRGQRVDTLRPGQGVGLAVAREITEQYEGKIVAGESMLGGARMEVIFGRQHSAPKDE"
 mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
-neighborhoods_filename = "phoq_esm1b_euclidean.jld2"
 #coord_filename = "PhoQ_pca.pkl"
 coord_filename = "PhoQ_tsne.pkl"
 coord_variants = "PhoQ_variants.pkl" =#
 
 # ___ Load data ___
+data_path = joinpath(@__DIR__, "..", "..", "data", dataset_name)
 wt_sequence = collect(wt_string)
 wt_variant = map(pos -> wt_sequence[pos], mutation_positions)
 alphabet = collect(DESilico.alphabet.protein)
@@ -68,12 +67,17 @@ function _extract_embedding(domain_coords::AbstractVector{Int})
 end
 
 # ___ Load Results ___
-gp_path = joinpath(@__DIR__, "..", "de", "data", "gpde")
-gp_filename = "gp_384_no_repeats.jld2"
+gp_path = joinpath(@__DIR__, "..", "de", "data", "boes", dataset_name, "01")
+gp_filename = "boes_wt.jld2"
 d = load(joinpath(gp_path, gp_filename))
 problem = d["problem"]
 
-model = EmbeddingGP(problem.model.kernel, problem.model.length_scale_prior, _extract_embedding)
+model = EmbeddingGP(
+    problem.model.kernel,
+    problem.model.length_scale_prior,
+    _extract_embedding,
+    problem.model.noise_std_priors, # [Dirac(0.0)]
+)
 posterior = BOSS.model_posterior(model, problem.data)
 
 # ___ Load coordinates ___
