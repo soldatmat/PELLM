@@ -13,7 +13,7 @@ include("../de/boes/lib/de_acq_maximizer.jl")
 
 # ___ Choose run ___
 dataset_name = "GB1" # "GB1", "PhoQ"
-run_folder = "BOSS_v0.2.0_80_budget"
+run_folder = "BOSS_v0.2.0_24_budget"
 gp_filename = "boes_wt.jld2"
 
 # ___ Load Results ___
