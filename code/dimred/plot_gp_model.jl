@@ -121,13 +121,13 @@ x2s = map(d -> d[2], data_sample)
 ys = map(d -> d[3], data_sample)
 vs = map(d -> d[4], data_sample)
 
-# ___ `vs` reconstruction ___
+# ___ `cv` reconstruction ___
 coord_path = @__DIR__
 c = load_pickle(joinpath(coord_path, coord_filename))[:, 1:2]
 cv = load_pickle(joinpath(coord_path, coord_variants))
 x1s, x2s, ys = load_pickle(joinpath(coord_path, prediction_filename))
 c2cv = Dict(Tuple.(eachrow(c)) .=> cv)
-vs = [c2cv[(x1, x2)] for (x1, x2) in zip(x1s, x2s)]
+cv = [c2cv[(x1, x2)] for (x1, x2) in zip(x1s, x2s)]
 
 # ___ Save stuff ___
 pickle = pyimport("pickle")
@@ -138,6 +138,7 @@ file_path = joinpath(coord_path, prediction_filename)
             x2s,
             ys,
             vs,
+            cv,
         ], f)
 end
 
