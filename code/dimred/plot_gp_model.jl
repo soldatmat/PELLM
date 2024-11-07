@@ -30,6 +30,7 @@ missing_fitness_value = 0.0
 #coord_filename = "GB1_pca.pkl"
 coord_filename = "GB1_tsne.pkl"
 coord_variants = "GB1_variants.pkl"
+prediction_filename = "boes_gb1_tsne.pkl"
 
 # PhoQ
 #= dataset_name = "PhoQ"
@@ -38,7 +39,8 @@ mutation_positions = [284, 285, 288, 289]
 missing_fitness_value = 0.0
 #coord_filename = "PhoQ_pca.pkl"
 coord_filename = "PhoQ_tsne.pkl"
-coord_variants = "PhoQ_variants.pkl" =#
+coord_variants = "PhoQ_variants.pkl"
+prediction_filename = "boes_phoq_tsne.pkl" =#
 
 # ___ Load data ___
 data_path = joinpath(@__DIR__, "..", "..", "data", dataset_name)
@@ -76,27 +78,27 @@ model = EmbeddingGP(
     problem.model.kernel,
     problem.model.length_scale_prior,
     _extract_embedding,
-    problem.model.noise_std_priors, # [Dirac(0.0)]
+    [Dirac(0.0)], # problem.model.noise_std_priors
 )
 posterior = BOSS.model_posterior(model, problem.data)
 
 # ___ Load coordinates ___
-x2c(x, cv::AbstractVector{Vector{Int64}}) = findfirst(a->a==x, cv)
+x2c(x, cv::AbstractVector{Vector{Int64}}) = findfirst(a -> a == x, cv)
 function _index2coords(x_indexes::AbstractVector{Int64})
-    x1 = map(x -> c[x,1], x_indexes)
-    x2 = map(x -> c[x,2], x_indexes)
+    x1 = map(x -> c[x, 1], x_indexes)
+    x2 = map(x -> c[x, 2], x_indexes)
     return x1, x2
 end
-function get_x_coords(variant_codes::AbstractMatrix{T}, cv::AbstractVector{Vector{Int64}}) where {T <: Real}
+function get_x_coords(variant_codes::AbstractMatrix{T}, cv::AbstractVector{Vector{Int64}}) where {T<:Real}
     x_indexes = map(x -> x2c(x, cv), eachcol(variant_codes))
     return _index2coords(x_indexes)
 end
-function get_x_coords(variant_codes::AbstractVector{Vector{T}}, cv::AbstractVector{Vector{Int64}}) where {T <: Real}
+function get_x_coords(variant_codes::AbstractVector{Vector{T}}, cv::AbstractVector{Vector{Int64}}) where {T<:Real}
     x_indexes = map(x -> x2c(x, cv), variant_codes)
     return _index2coords(x_indexes)
 end
-coord_path = joinpath(@__DIR__, "..", "dimred")
-c = load_pickle(joinpath(coord_path, coord_filename))[:,1:2]
+coord_path = @__DIR__
+c = load_pickle(joinpath(coord_path, coord_filename))[:, 1:2]
 cv = load_pickle(joinpath(coord_path, coord_variants))
 cv = map(c -> _encode_domain(collect(c)), cv)
 x1, x2 = get_x_coords(problem.data.X, cv)
@@ -119,14 +121,23 @@ x2s = map(d -> d[2], data_sample)
 ys = map(d -> d[3], data_sample)
 vs = map(d -> d[4], data_sample)
 
+# ___ `vs` reconstruction ___
+coord_path = @__DIR__
+c = load_pickle(joinpath(coord_path, coord_filename))[:, 1:2]
+cv = load_pickle(joinpath(coord_path, coord_variants))
+x1s, x2s, ys = load_pickle(joinpath(coord_path, prediction_filename))
+c2cv = Dict(Tuple.(eachrow(c)) .=> cv)
+vs = [c2cv[(x1, x2)] for (x1, x2) in zip(x1s, x2s)]
+
 # ___ Save stuff ___
 pickle = pyimport("pickle")
-file_path = joinpath(@__DIR__, "boes_gb1_tsne.pkl")
+file_path = joinpath(coord_path, prediction_filename)
 @pywith pybuiltin("open")(file_path, "wb") as f begin
     pickle.dump([
             x1s,
             x2s,
             ys,
+            vs,
         ], f)
 end
 
