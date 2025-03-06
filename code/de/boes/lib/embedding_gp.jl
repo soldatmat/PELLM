@@ -10,13 +10,13 @@ function (kernel::EmbeddingKernel)(emb1, emb2)
     kernel.kernel(emb1, emb2)
 end
 
-```
+"""
 Defined for completeness but not called in BOES procedure.
 
 Because `finite_EmbeddingGP` returns `BOSS.finite_gp(...)` so
 `KernelFunctions.with_lengthscale(dk::DiscreteKernel, lengthscale::Real)`,
 which is defined in BOSS, is called instead.
-```
+"""
 function with_lengthscale(kernel::EmbeddingKernel, lengthscale::Real)
     EmbeddingKernel(KernelFunctions.with_lengthscale(kernel.kernel, lengthscale))
 end
