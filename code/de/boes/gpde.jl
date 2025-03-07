@@ -93,16 +93,22 @@ model_fitter = BOSS.OptimizationMAP(;
     rhoend=1e-4,
 )
 
-# ___ Run GP ___
-bo!(problem;
+acq_maximizer = DEAcqMaximizer(variant_coords)
+acquisition = ExpectedImprovement()
+options = BossOptions(;
+    info=true,
+    debug=false,
+)
+
+# ___ Run BO ___
+@show Threads.nthreads()
+
+@time bo!(problem;
     model_fitter,
-    acq_maximizer=DEAcqMaximizer(variant_coords),
-    acquisition=ExpectedImprovement(),
+    acq_maximizer,
+    acquisition,
     term_cond=IterLimit(199),
-    options=BossOptions(;
-        info=true,
-        debug=false,
-    ),
+    options,
 )
 
 if isnothing(sampled_starting_variant_idx)

@@ -11,8 +11,13 @@ struct DEAcqMaximizer <: BOSS.AcquisitionMaximizer
 end
 
 function BOSS.maximize_acquisition(acq_maximizer::DEAcqMaximizer, acquisition::BOSS.AcquisitionFunction, problem::BossProblem, options::BossOptions)
-    acq = acquisition(problem, options) # acq: [3, 5, 12, 3] -> fitness
-    scores = map(coords -> acq(coords), acq_maximizer.variant_coords)
+    acq = acquisition(problem, options) # acq: x -> acquisition function value
+
+    scores = Array{Float64,1}(undef, length(acq_maximizer.variant_coords))
+    Threads.@threads for i in 1:length(acq_maximizer.variant_coords)
+        scores[i] = acq(acq_maximizer.variant_coords[i])
+    end
+
     map(x -> scores[acq_maximizer.variant_index[x]] = 0.0, eachcol(problem.data.X))
     variants = map(i -> (acq_maximizer.variant_coords[i], scores[i]), eachindex(acq_maximizer.variant_coords))
     sort!(variants, by=x -> x[2], rev=true)
