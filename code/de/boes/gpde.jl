@@ -8,6 +8,7 @@ using OptimizationPRIMA
 include("../utils.jl")
 include("lib/embedding_gp.jl")
 include("lib/de_acq_maximizer.jl")
+include("lib/boss_utils.jl")
 
 # ___ Arguments ___
 # First argument can specify the index of the sampled starting variant to be used instead of the wild-type variant.
@@ -111,14 +112,24 @@ options = BossOptions(;
     options,
 )
 
+fitness_progression = get_gp_fitness_progression(problem)
+obtained_data = DataFrame(
+    X=[col for col in eachcol(problem.data.X)],
+    Y=[col for col in eachcol(problem.data.Y)],
+    maxY=fitness_progression,
+)
 if isnothing(sampled_starting_variant_idx)
+    save_folder = joinpath(@__DIR__, "..", "data", "boes", dataset_name, "01")
+    CSV.write(joinpath(save_folder, "boes_wt_data.csv"), obtained_data)
     save(
-        joinpath(@__DIR__, "..", "data", "boes", dataset_name, "01", "boes_wt.jld2"),
+        joinpath(save_folder, "boes_wt.jld2"),
         "problem", problem,
     )
 else
+    save_folder = joinpath(@__DIR__, "..", "data", "boes", dataset_name, "sample")
+    CSV.write(joinpath(save_folder, "boes_$(sampled_starting_variant_idx_data)_data.csv"), obtained_data)
     save(
-        joinpath(@__DIR__, "..", "data", "boes", dataset_name, "sample", "boes_$sampled_starting_variant_idx.jld2"),
+        joinpath(save_folder, "boes_$sampled_starting_variant_idx.jld2"),
         "problem", problem,
     )
 end
