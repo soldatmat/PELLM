@@ -94,7 +94,7 @@ model_fitter = BOSS.OptimizationMAP(;
     rhoend=1e-4,
 )
 
-acq_maximizer = DEAcqMaximizer(variant_coords)
+acq_maximizer = DEAcqMaximizer(variant_coords; parallel=true)
 acquisition = ExpectedImprovement()
 options = BossOptions(;
     info=true,
