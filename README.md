@@ -31,8 +31,8 @@ Academy of Sciences 118.15 (2021), e2016239118.
 The used datasets are included in `data`. If you use them, don't forget to cite the original papers.<br/>
 Correct citations are included with each dataset in a `CITE_AS.txt` file with corresponding BibTeX template.
 
-- **GB1:** Nicholas C Wu et al. “Adaptation in protein fitness landscapes is facilitated by
-indirect paths”. In: Elife 5 (2016), e16965.
+- **GB1:** Wu, Nicholas C., et al. "Adaptation in protein fitness landscapes is facilitated by indirect paths." Elife 5 (2016): e16965.
 
-- **PhoQ:** Anna I Podgornaia and Michael T Laub. “Pervasive degeneracy and epistasis in a
-protein-protein interface”. In: Science 347.6222 (2015), pp. 673–677.
+- **PhoQ:** Podgornaia, Anna I., and Michael T. Laub. "Pervasive degeneracy and epistasis in a protein-protein interface." Science 347.6222 (2015): 673-677.
+
+- **TrpB:** Johnston, Kadina E., et al. "A combinatorially complete epistatic fitness landscape in an enzyme active site." Proceedings of the National Academy of Sciences 121.32 (2024): e2400439121.
