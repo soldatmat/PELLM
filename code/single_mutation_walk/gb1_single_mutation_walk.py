@@ -42,14 +42,26 @@ MUTATION_POSITIONS = [
     3,
 ]  # [39, 40, 41, 54] in the GB1 wt sequence (indexed from 1)
 # WILD_TYPE_VARIANT = "VDGV" # GB1
-WILD_TYPE_VARIANT = "AVST"  # PhoQ
+# WILD_TYPE_VARIANT = "AVST"  # PhoQ
+WILD_TYPE_VARIANT = "VFVS" # TrpB
 
 
 def LOAD_DATA():
+    # GB1
     # dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
-    dfs = pandas.read_excel("../../data/PhoQ/PhoQ.xlsx")
-    variants = [v for v in dfs.Variants]
-    variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+    # variants = [v for v in dfs.Variants]
+    # variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+
+    # PhoQ
+    # dfs = pandas.read_excel("../../data/PhoQ/PhoQ.xlsx")
+    # variants = [v for v in dfs.Variants]
+    # variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+
+    # TrpB
+    dfs = pandas.read_csv("../../data/TrpB/fitness.csv")
+    variants = [v for v in dfs.variant]
+    variant_fitness = dict(zip(dfs.variant, dfs.fitness))
+
     return variants, variant_fitness
 
 

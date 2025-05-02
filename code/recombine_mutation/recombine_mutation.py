@@ -1,6 +1,5 @@
 # Reproudction of the simulation of Directed Evolution: Recombining Mutations in Best Variants from https://www.pnas.org/doi/full/10.1073/pnas.1901979116.
 
-import copy
 import pandas
 import random
 
@@ -32,10 +31,21 @@ MUTATION_POSITIONS = [0, 1, 2, 3]  # [39, 40, 41, 54] in the GB1 wt sequence (in
 
 
 def LOAD_DATA():
-    #dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
-    dfs = pandas.read_excel('../../data/PhoQ/PhoQ.xlsx')
-    variants = [v for v in dfs.Variants]
-    variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+    # GB1
+    # dfs = pandas.read_excel("../../data/GB1/elife-16965-supp1.xlsx")
+    # variants = [v for v in dfs.Variants]
+    # variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+
+    # PhoQ
+    # dfs = pandas.read_excel('../../data/PhoQ/PhoQ.xlsx')
+    # variants = [v for v in dfs.Variants]
+    # variant_fitness = dict(zip(dfs.Variants, dfs.Fitness))
+
+    # TrpB
+    dfs = pandas.read_csv("../../data/TrpB/fitness.csv")
+    variants = [v for v in dfs.variant]
+    variant_fitness = dict(zip(dfs.variant, dfs.fitness))
+
     return variants, variant_fitness
 
 
