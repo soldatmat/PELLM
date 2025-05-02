@@ -1,6 +1,7 @@
 using DESilico
 using Distributions
 using AbstractGPs
+using LinearAlgebra
 
 struct EmbeddingKernel <: Kernel
     kernel::Kernel
@@ -8,6 +9,33 @@ end
 
 function (kernel::EmbeddingKernel)(emb1, emb2)
     kernel.kernel(emb1, emb2)
+end
+
+struct AdditiveKernel <: Kernel
+    kernel::Kernel
+end
+
+function (kernel::AdditiveKernel)(emb1, emb2)
+    sum((sqrt(1280) / 3)^2 .* [kernel.kernel(emb1[d], emb2[d]) for d in length(emb1)])
+end
+
+struct ConicKernel <: Kernel
+    r_kernel::Kernel
+    kernel::Kernel
+end
+
+function (kernel::ConicKernel)(emb1, emb2)
+    norm1 = norm(emb1)
+    norm2 = norm(emb2)
+    e1 = emb1 ./ norm1
+    e2 = emb2 ./ norm2
+    a = 5
+    b = 5
+
+    one = 1 - real(complex(1 - real(complex(norm1)^a))^b)
+    two = 1 - real(complex(1 - real(complex(norm2)^a))^b)
+
+    return kernel.r_kernel(one, two) * kernel.kernel(e1, e2)
 end
 
 """
@@ -32,7 +60,7 @@ end
 # kernel(x, y) ≈ (SqExponentialKernel() ∘ ARDTransform([2, 0.4]))(x, y) = SqExponentialKernel(x .* [2, 0.4], y .* [2, 0.4])
 
 struct EmbeddingGP <: BOSS.SurrogateModel
-    kernel::EmbeddingKernel
+    kernel::Union{EmbeddingKernel,AdditiveKernel,ConicKernel}
     length_scale_prior::MultivariateDistribution
     extract_embedding::Function
     noise_std_priors::AbstractVector{<:UnivariateDistribution}
