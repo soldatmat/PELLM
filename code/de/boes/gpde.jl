@@ -38,6 +38,7 @@ if isnothing(sampled_starting_variant_idx)
     starting_variant = map(pos -> wt_sequence[pos], mutation_positions)
 else
     starting_variant = load(joinpath(data_path, "sample_1000.jld2"))["variants"][sampled_starting_variant_idx]
+    map(i -> wt_sequence[mutation_positions[i]] = starting_variant[i], eachindex(starting_variant))
 end
 
 # ___ Load data ___
