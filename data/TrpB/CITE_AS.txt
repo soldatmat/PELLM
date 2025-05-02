@@ -1,0 +1,15 @@
+Johnston, Kadina E., et al. "A combinatorially complete 
+epistatic fitness landscape in an enzyme active site." 
+Proceedings of the National Academy of Sciences 121.32 (2024): e2400439121.
+
+BibTeX
+@article{johnston2024combinatorially,
+  title={A combinatorially complete epistatic fitness landscape in an enzyme active site},
+  author={Johnston, Kadina E and Almhjell, Patrick J and Watkins-Dulaney, Ella J and Liu, Grace and Porter, Nicholas J and Yang, Jason and Arnold, Frances H},
+  journal={Proceedings of the National Academy of Sciences},
+  volume={121},
+  number={32},
+  pages={e2400439121},
+  year={2024},
+  publisher={National Academy of Sciences}
+}

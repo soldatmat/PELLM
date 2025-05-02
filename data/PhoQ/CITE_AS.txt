@@ -1,5 +1,6 @@
-Anna I Podgornaia and Michael T Laub. “Pervasive degeneracy and epistasis in a
-protein-protein interface”. In: Science 347.6222 (2015), pp. 673–677.
+Podgornaia, Anna I., and Michael T. Laub. "Pervasive 
+degeneracy and epistasis in a protein-protein interface." 
+Science 347.6222 (2015): 673-677.
 
 BibTeX
 @article{podgornaia2015pervasive,

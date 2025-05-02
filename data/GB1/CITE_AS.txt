@@ -1,5 +1,6 @@
-Nicholas C Wu et al. “Adaptation in protein fitness landscapes is facilitated by
-indirect paths”. In: Elife 5 (2016), e16965.
+Wu, Nicholas C., et al. "Adaptation in protein fitness 
+landscapes is facilitated by indirect paths." Elife 5 (2016): 
+e16965.
 
 BibTeX
 @article{wu2016adaptation,
